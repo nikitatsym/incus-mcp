@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>incus-mcp setup</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0d1117;color:#c9d1d9;min-height:100vh;display:flex;justify-content:center;padding:2rem}
+.container{max-width:720px;width:100%}
+h1{font-size:1.8rem;margin-bottom:.5rem}
+p.sub{color:#8b949e;margin-bottom:1.5rem}
+label{display:block;font-size:.9rem;color:#8b949e;margin-bottom:.4rem}
+.row{margin-bottom:1rem}
+input,select{width:100%;padding:.6rem .8rem;background:#161b22;border:1px solid #30363d;border-radius:6px;color:#c9d1d9;font-size:.95rem;outline:none}
+input:focus,select:focus{border-color:#58a6ff}
+.config{position:relative;margin-top:1.5rem}
+pre{background:#161b22;border:1px solid #30363d;border-radius:6px;padding:1rem;overflow-x:auto;font-size:.85rem;line-height:1.5}
+.copy{position:absolute;top:.5rem;right:.5rem;background:#21262d;border:1px solid #30363d;color:#c9d1d9;padding:.3rem .7rem;border-radius:4px;cursor:pointer;font-size:.8rem}
+.copy:hover{background:#30363d}
+.links{margin-top:1.5rem;font-size:.85rem;color:#8b949e}
+.links a{color:#58a6ff;text-decoration:none}
+.links a:hover{text-decoration:underline}
+.auth-tabs{display:flex;gap:.5rem;margin-bottom:1rem}
+.auth-tab{padding:.4rem .8rem;background:#161b22;border:1px solid #30363d;border-radius:4px;cursor:pointer;font-size:.85rem;color:#8b949e}
+.auth-tab.active{border-color:#58a6ff;color:#58a6ff}
+.auth-section{display:none}
+.auth-section.active{display:block}
+</style>
+</head>
+<body>
+<div class="container">
+<h1>incus-mcp</h1>
+<p class="sub">MCP server for Incus container and VM manager</p>
+
+<div class="row">
+<label>Incus URL</label>
+<input id="url" placeholder="https://incus.example.com:8443" oninput="update()">
+</div>
+
+<div class="auth-tabs">
+<div class="auth-tab active" onclick="setAuth('oidc')">OIDC (Authentik)</div>
+<div class="auth-tab" onclick="setAuth('tls')">TLS Certificate</div>
+</div>
+
+<div id="auth-oidc" class="auth-section active">
+<div class="row">
+<label>OIDC Issuer</label>
+<input id="issuer" placeholder="https://auth.example.com/application/o/incus/" oninput="update()">
+</div>
+<div class="row">
+<label>OIDC Client ID</label>
+<input id="client_id" placeholder="your-client-id" oninput="update()">
+</div>
+<div class="row">
+<label>Username</label>
+<input id="username" placeholder="your-username" oninput="update()">
+</div>
+<div class="row">
+<label>Password / App Token</label>
+<input id="password" type="password" placeholder="your-app-password-token" oninput="update()">
+</div>
+</div>
+
+<div id="auth-tls" class="auth-section">
+<div class="row">
+<label>Client Certificate Path</label>
+<input id="cert" placeholder="/path/to/client.crt" oninput="update()">
+</div>
+<div class="row">
+<label>Client Key Path</label>
+<input id="key" placeholder="/path/to/client.key" oninput="update()">
+</div>
+</div>
+
+<div class="config">
+<button class="copy" onclick="copyConfig()">Copy</button>
+<pre id="output"></pre>
+</div>
+
+<div class="links">
+Paste into:
+<a href="https://docs.anthropic.com/en/docs/claude-code/mcp">Claude Code</a> ·
+<a href="https://modelcontextprotocol.io/quickstart/user">Claude Desktop</a> ·
+<a href="https://docs.cursor.com/context/model-context-protocol">Cursor</a>
+<br><br>
+<a href="https://github.com/nikitatsym/incus-mcp">GitHub</a>
+</div>
+</div>
+
+<script>
+let authMode='oidc';
+function setAuth(mode){
+  authMode=mode;
+  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.auth-section').forEach(s=>s.classList.remove('active'));
+  document.querySelector(`.auth-tab[onclick="setAuth('${mode}')"]`).classList.add('active');
+  document.getElementById('auth-'+mode).classList.add('active');
+  update();
+}
+function update(){
+  const idx='https://nikitatsym.github.io/incus-mcp/simple';
+  const env={INCUS_URL:document.getElementById('url').value||'https://incus.example.com:8443'};
+  if(authMode==='oidc'){
+    env.INCUS_OIDC_ISSUER=document.getElementById('issuer').value||'https://auth.example.com/application/o/incus/';
+    env.INCUS_OIDC_CLIENT_ID=document.getElementById('client_id').value||'your-client-id';
+    env.INCUS_USERNAME=document.getElementById('username').value||'your-username';
+    env.INCUS_PASSWORD=document.getElementById('password').value||'your-app-password-token';
+  }else{
+    env.INCUS_CLIENT_CERT=document.getElementById('cert').value||'/path/to/client.crt';
+    env.INCUS_CLIENT_KEY=document.getElementById('key').value||'/path/to/client.key';
+  }
+  const cfg={mcpServers:{incus:{command:'uvx',args:['--refresh','--extra-index-url',idx,'incus-mcp'],env}}};
+  document.getElementById('output').textContent=JSON.stringify(cfg,null,2);
+}
+function copyConfig(){
+  navigator.clipboard.writeText(document.getElementById('output').textContent);
+  const b=document.querySelector('.copy');b.textContent='Copied!';setTimeout(()=>b.textContent='Copy',1500);
+}
+update();
+</script>
+</body>
+</html>

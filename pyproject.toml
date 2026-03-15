@@ -1,0 +1,25 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "incus-mcp"
+version = "1.0.0"
+description = "MCP server for Incus container and VM manager"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+dependencies = [
+    "mcp>=1.0.0",
+    "httpx>=0.27.0",
+    "pydantic-settings>=2.0",
+]
+keywords = ["mcp", "incus", "containers", "lxc", "model-context-protocol", "claude", "ai"]
+
+[project.scripts]
+incus-mcp = "incus_mcp:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
