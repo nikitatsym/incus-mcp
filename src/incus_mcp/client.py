@@ -116,6 +116,9 @@ class IncusClient:
             raise APIError(r.status_code, r.request.method, str(r.request.url), body)
         if r.status_code == 204 or not r.content:
             return None
+        ct = r.headers.get("content-type", "")
+        if "json" not in ct:
+            return r.text
         data = r.json()
         # Incus wraps responses in envelope
         if isinstance(data, dict) and "metadata" in data:
