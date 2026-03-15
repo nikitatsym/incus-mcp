@@ -89,21 +89,9 @@ def exec_instance(name: str, command: list[str], project: str | None = None,
     if project:
         params["project"] = project
     result = _get_client().post(f"/1.0/instances/{name}/exec", json=body, params=params)
-    # Wait for exec to complete and fetch output
-    if isinstance(result, dict) and result.get("id"):
-        op = _get_client().get(f"/1.0/operations/{result['id']}/wait")
-        output = {}
-        out = op.get("metadata", {}) if isinstance(op, dict) else {}
-        output_files = out.get("output", {})
-        for key, path in (output_files.items() if isinstance(output_files, dict) else []):
-            try:
-                output[key] = _get_client().get(path)
-            except Exception:
-                pass
-        return {
-            "return_code": out.get("return"),
-            "output": output,
-        }
+    # Return operation ID immediately — don't block
+    # Use ShowOperation/WaitOperation to check status
+    # Use GetExecOutput to read stdout/stderr
     return result
 
 
