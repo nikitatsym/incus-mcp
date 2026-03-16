@@ -13,6 +13,7 @@ from .helpers import (
     _ok,
     _qp,
     _slim_list,
+    _tail_filter,
 )
 
 
@@ -50,9 +51,10 @@ def get_resources():
 
 
 @_op(incus_read)
-def get_metrics():
-    """Get Prometheus metrics."""
-    return _get_client().get("/1.0/metrics")
+def get_metrics(tail: int = 0, filter: str | None = None):
+    """Get Prometheus metrics. tail: last N lines (0=full). filter: regex to grep metrics."""
+    text = _get_client().get("/1.0/metrics")
+    return _tail_filter(text, tail, filter)
 
 
 @_op(incus_read)
@@ -96,9 +98,10 @@ def list_instance_logs(name: str):
 
 
 @_op(incus_read)
-def get_instance_log(name: str, filename: str):
-    """Get a specific instance log file."""
-    return _get_client().get(f"/1.0/instances/{name}/logs/{filename}")
+def get_instance_log(name: str, filename: str, tail: int = 100, filter: str | None = None):
+    """Get a specific instance log file. tail: last N lines (0=full). filter: regex."""
+    text = _get_client().get(f"/1.0/instances/{name}/logs/{filename}")
+    return _tail_filter(text, tail, filter)
 
 
 @_op(incus_read)
@@ -108,15 +111,17 @@ def list_exec_outputs(name: str):
 
 
 @_op(incus_read)
-def get_exec_output(name: str, filename: str):
-    """Get a specific exec output file."""
-    return _get_client().get(f"/1.0/instances/{name}/logs/exec-output/{filename}")
+def get_exec_output(name: str, filename: str, tail: int = 100, filter: str | None = None):
+    """Get a specific exec output file. tail: last N lines (0=full). filter: regex."""
+    text = _get_client().get(f"/1.0/instances/{name}/logs/exec-output/{filename}")
+    return _tail_filter(text, tail, filter)
 
 
 @_op(incus_read)
-def get_console_output(name: str, project: str | None = None):
-    """Get instance console output."""
-    return _get_client().get(f"/1.0/instances/{name}/console", params=_qp(project=project))
+def get_console_output(name: str, project: str | None = None, tail: int = 100, filter: str | None = None):
+    """Get instance console output. tail: last N lines (0=full). filter: regex."""
+    text = _get_client().get(f"/1.0/instances/{name}/console", params=_qp(project=project))
+    return _tail_filter(text, tail, filter)
 
 
 @_op(incus_read)
@@ -281,9 +286,10 @@ def show_network_acl(name: str):
 
 
 @_op(incus_read)
-def get_network_acl_log(name: str):
-    """Get network ACL log."""
-    return _get_client().get(f"/1.0/network-acls/{name}/log")
+def get_network_acl_log(name: str, tail: int = 100, filter: str | None = None):
+    """Get network ACL log. tail: last N lines (0=full). filter: regex."""
+    text = _get_client().get(f"/1.0/network-acls/{name}/log")
+    return _tail_filter(text, tail, filter)
 
 
 # ── Network Address Sets ─────────────────────────────────────────────

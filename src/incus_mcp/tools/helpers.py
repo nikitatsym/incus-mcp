@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from ..client import IncusClient
 
 _client: IncusClient | None = None
@@ -46,6 +48,19 @@ SLIM_NETWORK = {"name", "type", "managed", "status"}
 SLIM_VOLUME = {"name", "type", "content_type", "location"}
 SLIM_PROFILE = {"name", "description"}
 SLIM_PROJECT = {"name", "description"}
+
+
+def _tail_filter(text: str, tail: int = 100, filter: str | None = None) -> str:
+    if not isinstance(text, str) or not text:
+        return text
+    lines = text.splitlines()
+    if filter:
+        pattern = re.compile(filter)
+        lines = [l for l in lines if pattern.search(l)]
+    if tail > 0 and len(lines) > tail:
+        truncated = len(lines) - tail
+        lines = [f"... ({truncated} lines truncated)"] + lines[-tail:]
+    return "\n".join(lines)
 
 
 def _qp(
