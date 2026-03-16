@@ -136,6 +136,14 @@ class IncusClient:
         self._ensure_token()
         return self._handle(self._http.get(path, **kwargs))
 
+    def get_raw(self, path: str, **kwargs) -> bytes:
+        """GET that returns raw bytes (for binary content like screenshots)."""
+        self._ensure_token()
+        r = self._http.get(path, **kwargs)
+        if r.status_code >= 400:
+            raise APIError(r.status_code, "GET", path, r.text)
+        return r.content
+
     def post(self, path: str, **kwargs):
         self._ensure_token()
         return self._handle(self._http.post(path, **kwargs))

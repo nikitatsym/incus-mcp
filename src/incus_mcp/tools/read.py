@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from mcp.server.fastmcp import Image
+
 from ..registry import ROOT, _op
 from .groups import incus_read
 from .helpers import (
@@ -122,6 +124,13 @@ def get_console_output(name: str, project: str | None = None, tail: int = 100, f
     """Get instance console output. tail: last N lines (0=full). filter: regex."""
     text = _get_client().get(f"/1.0/instances/{name}/console", params=_qp(project=project))
     return _tail_filter(text, tail, filter)
+
+
+@_op(incus_read)
+def get_console_screenshot(name: str, project: str | None = None):
+    """Get a PNG screenshot of the VM's VGA console."""
+    data = _get_client().get_raw(f"/1.0/instances/{name}/console", params=_qp(project=project, type="vga"))
+    return Image(data=data, format="png")
 
 
 @_op(incus_read)
