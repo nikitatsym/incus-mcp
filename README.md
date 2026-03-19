@@ -6,12 +6,6 @@ MCP server for [Incus](https://linuxcontainers.org/incus/) container and VM mana
 
 ## Install
 
-```bash
-uvx --extra-index-url https://nikitatsym.github.io/incus-mcp/simple incus-mcp
-```
-
-## Config
-
 ### OIDC (Authentik app_password)
 
 1. In Authentik, create an OAuth2/OpenID provider for Incus (public client)
