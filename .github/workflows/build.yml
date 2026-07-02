@@ -19,6 +19,11 @@ jobs:
 
       - uses: astral-sh/setup-uv@v4
 
+      - name: Check
+        run: |
+          uv sync --dev
+          uv run python dev.py check
+
       - name: Compute version
         id: version
         run: |

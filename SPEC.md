@@ -8,12 +8,12 @@ type: task
 
 MCP server for [Incus](https://linuxcontainers.org/incus/) container and VM manager.
 
-- **MCP standard:** `/home/ari/src/obsidian_vault/specs/mcp-server.md` — follow it exactly (structure, registry, server dispatch, groups, config, client patterns)
+- **MCP standard:** see the mcp-server-v2 spec in the Obsidian vault (`specs/mcp/mcp-server-v2.md`) - follow it exactly (structure, registry, server dispatch, groups, config, client patterns)
 - **API base:** `{INCUS_URL}/1.0`, auth: TLS client certificate or Bearer token (JWT signed with client cert)
 - **OpenAPI spec:** https://github.com/lxc/incus/blob/main/doc/rest-api.yaml (Swagger 2.0, 282 operations)
 - **Docs:** https://linuxcontainers.org/incus/docs/main/rest-api/
 - **Health:** `GET /1.0` (200 = running, returns server environment)
-- **Hosting:** GitHub — CI/CD from `/home/ari/src/vastai-mcp/.github/workflows/build.yml`, enable Pages (Actions source), create `docs/index.html` setup page
+- **Hosting:** GitHub - CI/CD in `.github/workflows/build.yml`, Pages enabled (Actions source), `docs/index.html` setup page
 
 ## Config
 
@@ -52,6 +52,7 @@ incus_admin     — server config, cluster member state, warnings management, me
 | `list_exec_outputs(name)` | `GET /1.0/instances/{name}/logs/exec-output` | |
 | `get_exec_output(name, filename)` | `GET /1.0/instances/{name}/logs/exec-output/{filename}` | |
 | `get_console_output(name, project)` | `GET /1.0/instances/{name}/console` | |
+| `get_console_screenshot(name, project)` | `GET /1.0/instances/{name}/console?type=vga` | PNG image |
 | `get_instance_file(name, path, project)` | `GET /1.0/instances/{name}/files?path=` | |
 | `get_instance_metadata(name, project)` | `GET /1.0/instances/{name}/metadata` | Image metadata |
 | `list_instance_templates(name)` | `GET /1.0/instances/{name}/metadata/templates` | |
@@ -135,12 +136,17 @@ incus_admin     — server config, cluster member state, warnings management, me
 | **Operations** | | |
 | `list_operations()` | `GET /1.0/operations?recursion=1` | |
 | `show_operation(id)` | `GET /1.0/operations/{id}` | |
-| `wait_operation(id)` | `GET /1.0/operations/{id}/wait` | |
+| `wait_operation(id)` | `GET /1.0/operations/{id}/wait` | Blocking; drains pending-verify on success |
+| **Operations - Waiters** | | |
+| `operation_wait_start(operation_id, timeout, interval, ...)` | `GET /1.0/operations/{id}` | Non-blocking; spawns a background poll task |
+| `operation_wait_poll(wait_id, max_block)` | (local) | Current snapshot; optionally blocks up to `max_block`s |
+| `operation_wait_cancel(wait_id)` | (local) | Cancel the local poll task; the operation is unaffected |
+| `waits_list()` | (local) | All in-flight and recently-terminal waits |
 | **Warnings** | | |
 | `list_warnings()` | `GET /1.0/warnings?recursion=1` | |
 | `show_warning(uuid)` | `GET /1.0/warnings/{uuid}` | |
 
-Total: 83
+Total: 87
 
 ### incus_write
 
@@ -238,7 +244,7 @@ Total: 83
 | `add_certificate(...)` | `POST /1.0/certificates` | |
 | `update_certificate(fingerprint, ...)` | `PUT /1.0/certificates/{fingerprint}` | |
 
-Total: 74
+Total: 75
 
 ### incus_execute
 
