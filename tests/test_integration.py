@@ -13,6 +13,7 @@ import os
 
 import pytest
 
+from incus_mcp import server
 from incus_mcp.client import APIError
 from incus_mcp.tools import delete, execute, read, write
 
@@ -45,6 +46,12 @@ def _cleanup(name: str) -> None:
         _settle(delete.delete_instance(name))
     except APIError:
         pass
+
+
+def _create_and_start(name: str) -> None:
+    """Create a container from the smoke image and start it (both ops waited)."""
+    _settle(write.create_instance(name=name, source=_SMOKE_SOURCE, type="container"))
+    _settle(execute.start_instance(name))
 
 
 @_needs_server
@@ -94,5 +101,61 @@ async def test_silent_drop_verify_async():
         assert failed or snap.get("verify_error") is not None, snap
         if snap.get("verify_error") is not None:
             assert "nonsense.namespace.key" in snap["verify_error"]
+    finally:
+        _cleanup(name)
+
+
+@_needs_server
+def test_exec_output_roundtrip():
+    # One case covers exec + blocking wait + exec-output logs: run `echo hi` in
+    # a started container, wait for the op, read the recorded stdout back.
+    # Blocking wait_operation, not the interval poller: a fast exec op is reaped
+    # by Incus before an interval poll would observe terminal success.
+    name = "mcp-smoke-exec"
+    _create_and_start(name)
+    try:
+        op = execute.exec_instance(name, command=["echo", "hi"])
+        result = read.wait_operation(op["id"])
+        assert result.get("status_code") == 200
+        outputs = read.list_exec_outputs(name)
+        stdout = [f for f in outputs if "stdout" in f]
+        assert stdout, outputs
+        text = read.get_exec_output(name, stdout[0].rsplit("/", 1)[-1])
+        assert "hi" in text
+    finally:
+        _cleanup(name)
+
+
+@_needs_server
+async def test_create_via_dispatch():
+    # Same create, but through the MCP dispatch layer (Pydantic params model +
+    # coerce), not the bare tool fn - covers the "bypassing the server" gap.
+    name = "mcp-smoke-dispatch"
+    op = await server._dispatch(
+        "CreateInstance",
+        "incus_write",
+        {"name": name, "source": _SMOKE_SOURCE, "type": "container"},
+    )
+    try:
+        start = await read.operation_wait_start(op["id"], timeout=180)
+        snap = await read.operation_wait_poll(start["wait_id"], max_block=150)
+        assert snap["terminated"] and snap["status_code"] == 200
+    finally:
+        _cleanup(name)
+
+
+@_needs_server
+async def test_wait_cancel_live():
+    # Cancel the local poll of a genuinely long op (30s sleep exec) while it is
+    # still running: the wait ends without the operation terminating, and a
+    # second cancel is a no-op.
+    name = "mcp-smoke-cancel"
+    _create_and_start(name)
+    try:
+        op = execute.exec_instance(name, command=["sleep", "30"])
+        start = await read.operation_wait_start(op["id"], timeout=60, interval=2)
+        snap = await read.operation_wait_cancel(start["wait_id"])
+        assert not snap["terminated"]
+        await read.operation_wait_cancel(start["wait_id"])  # idempotent
     finally:
         _cleanup(name)
