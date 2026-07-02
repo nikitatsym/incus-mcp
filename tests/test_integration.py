@@ -22,7 +22,7 @@ _needs_server = pytest.mark.skipif(
     os.environ.get("INCUS_URL") is None, reason="INCUS_URL not set"
 )
 
-_SMOKE_SOURCE = {"type": "image", "alias": "images:alpine/3.20"}
+_SMOKE_SOURCE = {"type": "image", "alias": "e2e-alpine"}
 
 
 def _settle(result: object) -> None:
@@ -52,8 +52,8 @@ async def test_create_and_wait_container():
     name = "mcp-smoke-test"
     op = write.create_instance(name=name, source=_SMOKE_SOURCE, type="container")
     try:
-        start = await read.operation_wait_start(op["id"], timeout=120)
-        snap = await read.operation_wait_poll(start["wait_id"], max_block=30)
+        start = await read.operation_wait_start(op["id"], timeout=180)
+        snap = await read.operation_wait_poll(start["wait_id"], max_block=150)
         assert snap["terminated"]
         assert snap["status_code"] == 200
         assert snap.get("verify_error") is None
@@ -84,8 +84,8 @@ async def test_silent_drop_verify_async():
         config={"nonsense.namespace.key": "x"},
     )
     try:
-        start = await read.operation_wait_start(op["id"], timeout=120)
-        snap = await read.operation_wait_poll(start["wait_id"], max_block=30)
+        start = await read.operation_wait_start(op["id"], timeout=180)
+        snap = await read.operation_wait_poll(start["wait_id"], max_block=150)
         assert snap.get("verify_error") is not None
         assert "nonsense.namespace.key" in snap["verify_error"]
     finally:

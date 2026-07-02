@@ -58,3 +58,13 @@ def test_check_runs_full_gate_when_all_green(monkeypatch):
     assert any("ruff" in c for c in calls)
     assert any("mypy" in c for c in calls)
     assert any("pytest" in c for c in calls)
+
+
+def test_e2e_fails_loudly(monkeypatch):
+    # A gate that swallowed a failing `pytest -m integration` run would
+    # green-light releases over broken live smokes.
+    def fake_run(cmd, *a, **k):
+        return _FakeCompleted(1 if "integration" in cmd else 0)
+
+    monkeypatch.setattr(dev.subprocess, "run", fake_run)
+    assert dev.run("e2e") != 0

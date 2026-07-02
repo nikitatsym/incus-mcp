@@ -94,4 +94,9 @@ Each group is a single MCP tool. Call with `operation="help"` to list available 
 git config core.hooksPath .githooks
 ```
 
-Integration smoke tests hit a real Incus server and are excluded from the default run; execute them with `uv run python dev.py e2e` (requires `INCUS_URL` plus the auth env from Install).
+Integration smoke tests hit a real Incus server and are excluded from the default run (`-m integration`). Provision a throwaway Incus and run them:
+
+- **Linux host or VM:** `sudo scripts/e2e-env.sh && (. .e2e/env && uv run python dev.py e2e)`. The script installs Incus, does a minimal `incus admin init`, pre-pulls the `e2e-alpine` image, mints a client cert, and writes `.e2e/env` (git-ignored) with the matching `INCUS_*` vars. Idempotent - re-runs are no-ops.
+- **macOS:** Incus has no macOS daemon, so run the same recipe inside a Linux VM: `limactl start template://ubuntu-lts`, then clone the repo and run the Linux recipe inside the VM. This is the environment CI uses.
+
+CI runs the same smokes in a dedicated `e2e` job (`.github/workflows/build.yml`) that gates the release build.
