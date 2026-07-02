@@ -159,3 +159,22 @@ async def test_wait_cancel_live():
         await read.operation_wait_cancel(start["wait_id"])  # idempotent
     finally:
         _cleanup(name)
+
+
+@_needs_server
+async def test_dispatch_rejects_bad_params():
+    # The params model rejects unknown params and wrong types up front: a loud
+    # ValueError from the dispatch layer before any request reaches Incus, not a
+    # silent pass-through. No resource is created - validation precedes the POST.
+    with pytest.raises(ValueError):  # unknown param -> extra='forbid'
+        await server._dispatch(
+            "CreateInstance",
+            "incus_write",
+            {"name": "mcp-smoke-bad", "source": _SMOKE_SOURCE, "bogus_param": "x"},
+        )
+    with pytest.raises(ValueError):  # wrong type -> source must be a dict
+        await server._dispatch(
+            "CreateInstance",
+            "incus_write",
+            {"name": "mcp-smoke-bad", "source": "not-a-dict"},
+        )
