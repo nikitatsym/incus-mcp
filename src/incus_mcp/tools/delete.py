@@ -5,6 +5,7 @@ from typing import Annotated, Any, cast
 from pydantic import Field
 
 from ..registry import _UNSET, _op
+from ..types import OperationDict
 from .groups import incus_delete
 from .helpers import _PROJECT_DESC, _get_client, _ok, _qp
 
@@ -19,21 +20,21 @@ _UNSET_STR = cast(str | None, _UNSET)
 
 
 @_op(incus_delete)
-def delete_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any]:
+def delete_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> OperationDict:
     """Delete an instance. Irreversible."""
-    return _ok(_get_client().delete(f"/1.0/instances/{name}", params=_qp(project=project)))
+    return cast("OperationDict", _ok(_get_client().delete(f"/1.0/instances/{name}", params=_qp(project=project))))
 
 
 @_op(incus_delete)
-def delete_snapshot(name: str, snapshot: str) -> dict[str, Any]:
+def delete_snapshot(name: str, snapshot: str) -> OperationDict:
     """Delete an instance snapshot."""
-    return _ok(_get_client().delete(f"/1.0/instances/{name}/snapshots/{snapshot}"))
+    return cast("OperationDict", _ok(_get_client().delete(f"/1.0/instances/{name}/snapshots/{snapshot}")))
 
 
 @_op(incus_delete)
-def delete_backup(name: str, backup: str) -> dict[str, Any]:
+def delete_backup(name: str, backup: str) -> OperationDict:
     """Delete an instance backup."""
-    return _ok(_get_client().delete(f"/1.0/instances/{name}/backups/{backup}"))
+    return cast("OperationDict", _ok(_get_client().delete(f"/1.0/instances/{name}/backups/{backup}")))
 
 
 @_op(incus_delete)
@@ -75,11 +76,11 @@ def clear_console(name: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any
 
 
 @_op(incus_delete)
-def delete_image(fingerprint: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any]:
+def delete_image(fingerprint: str, project: _ProjectAnn = _UNSET_STR) -> OperationDict:
     """Delete an image."""
-    return _ok(_get_client().delete(
+    return cast("OperationDict", _ok(_get_client().delete(
         f"/1.0/images/{fingerprint}", params=_qp(project=project),
-    ))
+    )))
 
 
 @_op(incus_delete)
@@ -173,19 +174,19 @@ def delete_volume(
 
 
 @_op(incus_delete)
-def delete_volume_snapshot(pool: str, type: str, volume: str, snapshot: str) -> dict[str, Any]:
+def delete_volume_snapshot(pool: str, type: str, volume: str, snapshot: str) -> OperationDict:
     """Delete a volume snapshot."""
-    return _ok(_get_client().delete(
+    return cast("OperationDict", _ok(_get_client().delete(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}",
-    ))
+    )))
 
 
 @_op(incus_delete)
-def delete_volume_backup(pool: str, type: str, volume: str, backup: str) -> dict[str, Any]:
+def delete_volume_backup(pool: str, type: str, volume: str, backup: str) -> OperationDict:
     """Delete a volume backup."""
-    return _ok(_get_client().delete(
+    return cast("OperationDict", _ok(_get_client().delete(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{backup}",
-    ))
+    )))
 
 
 @_op(incus_delete)
@@ -209,9 +210,9 @@ def delete_bucket_key(pool: str, bucket: str, key: str) -> dict[str, Any]:
 
 
 @_op(incus_delete)
-def delete_bucket_backup(pool: str, bucket: str, backup: str) -> dict[str, Any]:
+def delete_bucket_backup(pool: str, bucket: str, backup: str) -> OperationDict:
     """Delete a storage bucket backup."""
-    return _ok(_get_client().delete(f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{backup}"))
+    return cast("OperationDict", _ok(_get_client().delete(f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{backup}")))
 
 
 # ── Profiles ─────────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ from typing import Annotated, Any, Literal, cast
 from pydantic import Field
 
 from ..registry import _UNSET, _op
+from ..types import OperationDict
 from .groups import incus_execute
 from .helpers import (
     _FORCE_DESC,
@@ -28,14 +29,14 @@ _UNSET_INT = cast(int | None, _UNSET)
 
 
 @_op(incus_execute)
-def start_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any]:
+def start_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> OperationDict:
     """Start an instance. Returns an async operation."""
     body: dict[str, Any] = {"action": "start"}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_execute)
@@ -43,14 +44,14 @@ def stop_instance(
     name: str,
     project: _ProjectAnn = _UNSET_STR,
     force: Annotated[bool, Field(description=_FORCE_DESC)] = False,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Stop an instance. Returns an async operation."""
     body: dict[str, Any] = {"action": "stop", "force": force}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_execute)
@@ -58,36 +59,36 @@ def restart_instance(
     name: str,
     project: _ProjectAnn = _UNSET_STR,
     force: Annotated[bool, Field(description=_FORCE_DESC)] = False,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Restart an instance. Returns an async operation."""
     body: dict[str, Any] = {"action": "restart", "force": force}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_execute)
-def freeze_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any]:
+def freeze_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> OperationDict:
     """Freeze an instance (pause all processes). Returns an async operation."""
     body: dict[str, Any] = {"action": "freeze"}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_execute)
-def unfreeze_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any]:
+def unfreeze_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> OperationDict:
     """Unfreeze an instance (resume all processes). Returns an async operation."""
     body: dict[str, Any] = {"action": "unfreeze"}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_execute)
@@ -97,14 +98,14 @@ def bulk_instance_state(
         Field(description="Bulk-apply the action to every instance in the project."),
     ],
     project: _ProjectAnn = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Bulk start / stop / restart every instance in the project. Async."""
     body: dict[str, Any] = {"action": action}
     result = _get_client().put(
         "/1.0/instances", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 # ── Exec ─────────────────────────────────────────────────────────────
@@ -128,7 +129,7 @@ def exec_instance(
     cwd: Annotated[str | None, Field(description="Working directory inside the instance.")] = _UNSET_STR,
     user: Annotated[int | None, Field(description="UID to run as (default is the instance's root user).")] = _UNSET_INT,
     group: Annotated[int | None, Field(description="GID to run as.")] = _UNSET_INT,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Execute a command in an instance. Returns the operation ID immediately."""
     body: dict[str, Any] = {
         "command": command,
@@ -148,29 +149,29 @@ def exec_instance(
         f"/1.0/instances/{name}/exec", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return cast("dict[str, Any]", result)
+    return cast("OperationDict", result)
 
 
 # ── Cluster Member State ─────────────────────────────────────────────
 
 
 @_op(incus_execute)
-def evacuate_cluster_member(name: str) -> dict[str, Any]:
+def evacuate_cluster_member(name: str) -> OperationDict:
     """Evacuate a cluster member (migrate all instances away). Async."""
     body: dict[str, Any] = {"action": "evacuate"}
     result = _get_client().post(
         f"/1.0/cluster/members/{name}/state", json=body,
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_execute)
-def restore_cluster_member(name: str) -> dict[str, Any]:
+def restore_cluster_member(name: str) -> OperationDict:
     """Restore a cluster member (migrate instances back). Async."""
     body: dict[str, Any] = {"action": "restore"}
     result = _get_client().post(
         f"/1.0/cluster/members/{name}/state", json=body,
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))

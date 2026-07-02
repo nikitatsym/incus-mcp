@@ -5,6 +5,7 @@ from typing import Annotated, Any, cast
 from pydantic import Field
 
 from ..registry import _UNSET, _op
+from ..types import OperationDict
 from .groups import incus_write
 from .helpers import (
     _CONFIG_DESC,
@@ -59,7 +60,7 @@ def create_instance(
     devices: _DevicesAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
     target: _TargetAnn = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create a new instance. Returns an async operation."""
     body: dict[str, Any] = {"name": name, "source": source, "type": type}
     if profiles is not _UNSET:
@@ -74,7 +75,7 @@ def create_instance(
     result = _get_client().post("/1.0/instances", json=body, params=qp)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/instances/{name}", qp)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -85,7 +86,7 @@ def update_instance(
     profiles: _ProfilesAnn = _UNSET_LIST_STR,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Update instance configuration (full replace). Use PatchInstance for partial update."""
     body: dict[str, Any] = {}
     if config is not _UNSET:
@@ -100,7 +101,7 @@ def update_instance(
         f"/1.0/instances/{name}", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -130,13 +131,13 @@ def patch_instance(
 
 
 @_op(incus_write)
-def rename_instance(name: str, new_name: str) -> dict[str, Any]:
+def rename_instance(name: str, new_name: str) -> OperationDict:
     """Rename an instance (also used for move/migrate). Async."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/instances/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/instances/{new_name}", {})
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -216,7 +217,7 @@ def rebuild_instance(
     name: str,
     source: Annotated[dict[str, Any], Field(description=_SOURCE_INSTANCE_DESC)],
     project: _ProjectAnn = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Rebuild an instance from a new image source. Async."""
     body: dict[str, Any] = {"source": source}
     qp = _qp(project=project)
@@ -225,7 +226,7 @@ def rebuild_instance(
     )
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/instances/{name}", qp)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 # ── Instance Snapshots ───────────────────────────────────────────────
@@ -237,7 +238,7 @@ def create_snapshot(
     snapshot_name: str,
     stateful: Annotated[bool, Field(description=_STATEFUL_DESC)] = False,
     project: _ProjectAnn = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create an instance snapshot. Async."""
     body: dict[str, Any] = {"name": snapshot_name, "stateful": stateful}
     qp = _qp(project=project)
@@ -248,7 +249,7 @@ def create_snapshot(
     _register_pending_verify(
         result, body, f"/1.0/instances/{name}/snapshots/{snapshot_name}", qp,
     )
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -259,7 +260,7 @@ def update_snapshot(
         str | None,
         Field(description="Expiration timestamp (RFC3339, e.g. '2026-12-31T00:00:00Z')."),
     ] = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Update instance snapshot properties."""
     body: dict[str, Any] = {}
     if expires_at is not _UNSET:
@@ -268,11 +269,11 @@ def update_snapshot(
         f"/1.0/instances/{name}/snapshots/{snapshot}", json=body,
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
-def rename_snapshot(name: str, snapshot: str, new_name: str) -> dict[str, Any]:
+def rename_snapshot(name: str, snapshot: str, new_name: str) -> OperationDict:
     """Rename an instance snapshot. Async."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
@@ -282,7 +283,7 @@ def rename_snapshot(name: str, snapshot: str, new_name: str) -> dict[str, Any]:
     _register_pending_verify(
         result, body, f"/1.0/instances/{name}/snapshots/{new_name}", {},
     )
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 # ── Instance Backups ─────────────────────────────────────────────────
@@ -306,7 +307,7 @@ def create_backup(
         bool,
         Field(description="Use storage-driver-specific format (re-importable only to same driver)."),
     ] = False,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create an instance backup. Async. Register skipped when backup_name auto-generated."""
     body: dict[str, Any] = {
         "instance_only": instance_only,
@@ -318,11 +319,11 @@ def create_backup(
         body["compression_algorithm"] = compression_algorithm
     result = _get_client().post(f"/1.0/instances/{name}/backups", json=body)
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
-def rename_backup(name: str, backup: str, new_name: str) -> dict[str, Any]:
+def rename_backup(name: str, backup: str, new_name: str) -> OperationDict:
     """Rename an instance backup. Async."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
@@ -332,7 +333,7 @@ def rename_backup(name: str, backup: str, new_name: str) -> dict[str, Any]:
     _register_pending_verify(
         result, body, f"/1.0/instances/{name}/backups/{new_name}", {},
     )
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 # ── Images ───────────────────────────────────────────────────────────
@@ -349,7 +350,7 @@ def create_image(
         Field(description="Image metadata dict (arbitrary key/value)."),
     ] = _UNSET_DICT,
     project: _ProjectAnn = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create/import an image. Async. Register skipped: fingerprint unknown pre-wait."""
     body: dict[str, Any] = {
         "source": source,
@@ -360,7 +361,7 @@ def create_image(
         body["properties"] = properties
     result = _get_client().post("/1.0/images", json=body, params=_qp(project=project))
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -417,9 +418,9 @@ def patch_image(
 
 
 @_op(incus_write)
-def refresh_image(fingerprint: str) -> dict[str, Any]:
+def refresh_image(fingerprint: str) -> OperationDict:
     """Refresh an image from its source. Async. Register skipped: empty body."""
-    return _ok(_get_client().post(f"/1.0/images/{fingerprint}/refresh"))
+    return cast("OperationDict", _ok(_get_client().post(f"/1.0/images/{fingerprint}/refresh")))
 
 
 @_op(incus_write)
@@ -653,7 +654,7 @@ def create_network_peer(
         Field(description="Target project (defaults to caller's project)."),
     ] = _UNSET_STR,
     config: _ConfigAnn = _UNSET_DICT,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create a network peer."""
     body: dict[str, Any] = {"name": name, "target_network": target_network}
     if target_project is not _UNSET:
@@ -662,7 +663,7 @@ def create_network_peer(
         body["config"] = config
     result = _get_client().post(f"/1.0/networks/{network}/peers", json=body)
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -1002,7 +1003,7 @@ def create_volume(
         Field(description="Volume content type ('filesystem' or 'block')."),
     ] = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create a storage volume. Async."""
     body: dict[str, Any] = {"name": name, "type": type}
     if config is not _UNSET:
@@ -1017,7 +1018,7 @@ def create_volume(
     _register_pending_verify(
         result, body, f"/1.0/storage-pools/{pool}/volumes/{type}/{name}", qp,
     )
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -1045,7 +1046,7 @@ def update_volume(
 
 
 @_op(incus_write)
-def rename_volume(pool: str, type: str, volume: str, new_name: str) -> dict[str, Any]:
+def rename_volume(pool: str, type: str, volume: str, new_name: str) -> OperationDict:
     """Rename/move a storage volume. Async."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
@@ -1058,7 +1059,7 @@ def rename_volume(pool: str, type: str, volume: str, new_name: str) -> dict[str,
         f"/1.0/storage-pools/{pool}/volumes/{type}/{new_name}",
         {},
     )
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -1067,7 +1068,7 @@ def create_volume_snapshot(
     type: str,
     volume: str,
     snapshot_name: str,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create a volume snapshot."""
     body: dict[str, Any] = {"name": snapshot_name}
     result = _get_client().post(
@@ -1075,7 +1076,7 @@ def create_volume_snapshot(
         json=body,
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -1111,7 +1112,7 @@ def rename_volume_snapshot(
     volume: str,
     snapshot: str,
     new_name: str,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Rename a volume snapshot."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
@@ -1125,7 +1126,7 @@ def rename_volume_snapshot(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{new_name}",
         {},
     )
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
@@ -1148,7 +1149,7 @@ def create_volume_backup(
         bool,
         Field(description="Use storage-driver-specific format."),
     ] = False,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create a volume backup. Async. Register skipped when backup_name auto-generated."""
     body: dict[str, Any] = {"volume_only": volume_only, "optimized_storage": optimized_storage}
     if backup_name is not _UNSET and backup_name:
@@ -1159,13 +1160,13 @@ def create_volume_backup(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups", json=body,
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
 def rename_volume_backup(
     pool: str, type: str, volume: str, backup: str, new_name: str,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Rename a volume backup."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
@@ -1179,7 +1180,7 @@ def rename_volume_backup(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{new_name}",
         {},
     )
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 # ── Storage Buckets ──────────────────────────────────────────────────
@@ -1278,7 +1279,7 @@ def create_bucket_backup(
     compression_algorithm: Annotated[
         str | None, Field(description="Compression algorithm (e.g. 'gzip')."),
     ] = _UNSET_STR,
-) -> dict[str, Any]:
+) -> OperationDict:
     """Create a storage bucket backup."""
     body: dict[str, Any] = {}
     if backup_name is not _UNSET and backup_name:
@@ -1289,11 +1290,11 @@ def create_bucket_backup(
         f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups", json=body,
     )
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)
-def rename_bucket_backup(pool: str, bucket: str, backup: str, new_name: str) -> dict[str, Any]:
+def rename_bucket_backup(pool: str, bucket: str, backup: str, new_name: str) -> OperationDict:
     """Rename a storage bucket backup."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
@@ -1307,7 +1308,7 @@ def rename_bucket_backup(pool: str, bucket: str, backup: str, new_name: str) -> 
         f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{new_name}",
         {},
     )
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 # ── Profiles ─────────────────────────────────────────────────────────
@@ -1407,13 +1408,13 @@ def update_project(
 
 
 @_op(incus_write)
-def rename_project(name: str, new_name: str) -> dict[str, Any]:
+def rename_project(name: str, new_name: str) -> OperationDict:
     """Rename a project."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/projects/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/projects/{new_name}", {})
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 # ── Cluster ──────────────────────────────────────────────────────────
@@ -1463,12 +1464,12 @@ def update_cluster_certificate(
 
 
 @_op(incus_write)
-def request_join_token(name: str) -> dict[str, Any]:
+def request_join_token(name: str) -> OperationDict:
     """Request a cluster join token for a new member."""
     body: dict[str, Any] = {"server_name": name}
     result = _get_client().post("/1.0/cluster/members", json=body)
     _verify_response(body, result)
-    return _ok(result)
+    return cast("OperationDict", _ok(result))
 
 
 @_op(incus_write)

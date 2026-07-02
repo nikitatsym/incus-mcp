@@ -39,11 +39,8 @@ asyncio_mode = "auto"
 line-length = 100
 
 [tool.ruff.lint]
-# E741: `l`/`type` used as loop var / param name; the tools file uses `type`
-# to match the Incus API's own `type` query/body name and `l` in a list-comp.
-# F401: re-exports in tests/tools/__init__ are intentional.
-# F541: mirrors gitlab-mcp - benign for a lone test fixture literal.
-ignore = ["E741", "F401", "F541"]
+# F401/F541 mirror gitlab-mcp: intentional re-exports / lone fixture literals.
+ignore = ["F401", "F541"]
 
 [tool.mypy]
 strict = true
@@ -55,11 +52,3 @@ disallow_untyped_defs = true
 [[tool.mypy.overrides]]
 module = "tests.*"
 ignore_errors = true
-
-[[tool.mypy.overrides]]
-module = "mcp.*"
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = "respx.*"
-ignore_missing_imports = true

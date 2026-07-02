@@ -11,6 +11,7 @@ from .. import wait_registry as _wr
 from ..client import APIError
 from ..registry import ROOT, _UNSET, _op
 from ..types import (
+    OperationDict,
     ImageDict,
     InstanceDict,
     NetworkDict,
@@ -47,11 +48,6 @@ from .helpers import (
     _tail_filter,
     _verify_response,
 )
-
-# Type aliases used only in this file. External JSON is cast at the client
-# boundary; downstream code sees the declared shape.
-_JSON: Any = None  # runtime unused, kept as documentation anchor
-
 
 # ── Version ──────────────────────────────────────────────────────────
 
@@ -1023,22 +1019,22 @@ def show_certificate(fingerprint: str) -> dict[str, Any]:
 
 
 @_op(incus_read)
-def list_operations() -> list[dict[str, Any]]:
+def list_operations() -> list[OperationDict]:
     """List background operations."""
     return cast(
-        "list[dict[str, Any]]",
+        "list[OperationDict]",
         _get_client().get("/1.0/operations", params=_qp(recursion=1)),
     )
 
 
 @_op(incus_read)
-def show_operation(id: str) -> dict[str, Any]:
+def show_operation(id: str) -> OperationDict:
     """Get operation details."""
-    return cast("dict[str, Any]", _get_client().get(f"/1.0/operations/{id}"))
+    return cast(OperationDict, _get_client().get(f"/1.0/operations/{id}"))
 
 
 @_op(incus_read)
-def wait_operation(id: str) -> dict[str, Any]:
+def wait_operation(id: str) -> OperationDict:
     """Wait for an operation to complete via Incus's server-side long-poll.
 
     Blocks the FastMCP event loop until Incus responds. One-shot short waits
@@ -1053,7 +1049,7 @@ def wait_operation(id: str) -> dict[str, Any]:
             sent, target_path, target_qp = entry
             target = _get_client().get(target_path, params=target_qp or None)
             _verify_response(sent, target)
-    return cast("dict[str, Any]", result)
+    return cast(OperationDict, result)
 
 
 # ── Operation waiters (non-blocking) ─────────────────────────────────

@@ -104,7 +104,7 @@ def _tail_filter(text: Any, tail: int = 100, filter: str | None = None) -> str:
     lines = text.splitlines()
     if filter:
         pattern = re.compile(filter)
-        lines = [l for l in lines if pattern.search(l)]
+        lines = [line for line in lines if pattern.search(line)]
     if tail > 0 and len(lines) > tail:
         truncated = len(lines) - tail
         lines = [f"... ({truncated} lines truncated)"] + lines[-tail:]
