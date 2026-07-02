@@ -1,887 +1,1627 @@
 from __future__ import annotations
 
-from ..registry import _op
+from typing import Annotated, cast
+
+from pydantic import Field
+
+from ..registry import _UNSET, _op
 from .groups import incus_write
-from .helpers import _get_client, _ok
+from .helpers import (
+    _CONFIG_DESC,
+    _DESCRIPTION_DESC,
+    _DEVICES_DESC,
+    _PROFILES_DESC,
+    _PROJECT_DESC,
+    _SOURCE_IMAGE_DESC,
+    _SOURCE_INSTANCE_DESC,
+    _STATEFUL_DESC,
+    _TARGET_DESC,
+    _get_client,
+    _ok,
+    _qp,
+    _register_pending_verify,
+    _verify_response,
+)
+
+# ── Common Field-annotated type aliases ──────────────────────────────
+# Every optional-nullable body param that carries the same wording lives
+# here so annotations across 60+ signatures stay consistent.
+
+_ProjectAnn = Annotated[str | None, Field(description=_PROJECT_DESC)]
+_DescriptionAnn = Annotated[str | None, Field(description=_DESCRIPTION_DESC)]
+_TargetAnn = Annotated[str | None, Field(description=_TARGET_DESC)]
+_ConfigAnn = Annotated[dict | None, Field(description=_CONFIG_DESC)]
+_DevicesAnn = Annotated[dict | None, Field(description=_DEVICES_DESC)]
+_ProfilesAnn = Annotated[list[str] | None, Field(description=_PROFILES_DESC)]
+
+_UNSET_STR = cast(str | None, _UNSET)
+_UNSET_DICT = cast(dict | None, _UNSET)
+_UNSET_LIST_STR = cast(list[str] | None, _UNSET)
+_UNSET_LIST_DICT = cast(list[dict] | None, _UNSET)
+_UNSET_BOOL = cast(bool | None, _UNSET)
+_UNSET_INT = cast(int | None, _UNSET)
 
 
 # ── Instances ────────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_instance(name: str, source: dict, type: str = "container", project: str | None = None,
-                    profiles: list[str] | None = None, config: dict | None = None,
-                    devices: dict | None = None, description: str | None = None,
-                    target: str | None = None):
-    """Create a new instance. source: {"type": "image", "alias": "ubuntu/24.04"} or {"type": "none"}. Async."""
+def create_instance(
+    name: str,
+    source: Annotated[dict, Field(description=_SOURCE_INSTANCE_DESC)],
+    type: Annotated[
+        str,
+        Field(description="'container' (LXC) or 'virtual-machine' (VM)."),
+    ] = "container",
+    project: _ProjectAnn = _UNSET_STR,
+    profiles: _ProfilesAnn = _UNSET_LIST_STR,
+    config: _ConfigAnn = _UNSET_DICT,
+    devices: _DevicesAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+    target: _TargetAnn = _UNSET_STR,
+):
+    """Create a new instance. Returns an async operation."""
     body: dict = {"name": name, "source": source, "type": type}
-    if profiles is not None:
+    if profiles is not _UNSET:
         body["profiles"] = profiles
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if devices is not None:
+    if devices is not _UNSET:
         body["devices"] = devices
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    if target:
-        params["target"] = target
-    return _ok(_get_client().post("/1.0/instances", json=body, params=params))
+    qp = _qp(project=project, target=target)
+    result = _get_client().post("/1.0/instances", json=body, params=qp)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/instances/{name}", qp)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_instance(name: str, config: dict | None = None, devices: dict | None = None,
-                    profiles: list[str] | None = None, description: str | None = None,
-                    project: str | None = None):
-    """Update instance configuration (full replace). Use PATCH for partial update."""
+def update_instance(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    devices: _DevicesAnn = _UNSET_DICT,
+    profiles: _ProfilesAnn = _UNSET_LIST_STR,
+    description: _DescriptionAnn = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
+    """Update instance configuration (full replace). Use PatchInstance for partial update."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if devices is not None:
+    if devices is not _UNSET:
         body["devices"] = devices
-    if profiles is not None:
+    if profiles is not _UNSET:
         body["profiles"] = profiles
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().put(f"/1.0/instances/{name}", json=body, params=params))
+    result = _get_client().put(
+        f"/1.0/instances/{name}", json=body, params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def patch_instance(name: str, config: dict | None = None, devices: dict | None = None,
-                   profiles: list[str] | None = None, description: str | None = None,
-                   project: str | None = None):
-    """Partially update instance configuration."""
+def patch_instance(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    devices: _DevicesAnn = _UNSET_DICT,
+    profiles: _ProfilesAnn = _UNSET_LIST_STR,
+    description: _DescriptionAnn = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
+    """Partially update instance configuration (merge-style)."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if devices is not None:
+    if devices is not _UNSET:
         body["devices"] = devices
-    if profiles is not None:
+    if profiles is not _UNSET:
         body["profiles"] = profiles
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().patch(f"/1.0/instances/{name}", json=body, params=params))
+    result = _get_client().patch(
+        f"/1.0/instances/{name}", json=body, params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_instance(name: str, new_name: str):
-    """Rename an instance (also used for move/migrate)."""
-    return _ok(_get_client().post(f"/1.0/instances/{name}", json={"name": new_name}))
+    """Rename an instance (also used for move/migrate). Async."""
+    body: dict = {"name": new_name}
+    result = _get_client().post(f"/1.0/instances/{name}", json=body)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/instances/{new_name}", {})
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_instance_metadata(name: str, metadata: dict, project: str | None = None):
+def update_instance_metadata(
+    name: str,
+    metadata: Annotated[
+        dict,
+        Field(description="Instance image metadata dict (architecture, creation_date, properties, ...)."),
+    ],
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Update instance image metadata."""
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().put(f"/1.0/instances/{name}/metadata", json=metadata, params=params))
+    result = _get_client().put(
+        f"/1.0/instances/{name}/metadata", json=metadata, params=_qp(project=project),
+    )
+    _verify_response(metadata, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def upload_instance_file(name: str, path: str, content: str, project: str | None = None,
-                         uid: int | None = None, gid: int | None = None,
-                         mode: str | None = None, file_type: str | None = None):
-    """Upload a file to an instance. content is the file body as text."""
-    params: dict = {"path": path}
-    if project:
-        params["project"] = project
-    headers: dict = {}
-    if uid is not None:
+def upload_instance_file(
+    name: str,
+    path: Annotated[
+        str,
+        Field(description="Absolute destination path inside the instance."),
+    ],
+    content: Annotated[
+        str,
+        Field(description="File body as text; sent as the raw request body."),
+    ],
+    project: _ProjectAnn = _UNSET_STR,
+    uid: Annotated[int | None, Field(description="Owning uid (X-Incus-uid header).")] = _UNSET_INT,
+    gid: Annotated[int | None, Field(description="Owning gid (X-Incus-gid header).")] = _UNSET_INT,
+    mode: Annotated[
+        str | None,
+        Field(description="Octal mode string, e.g. '0644' (X-Incus-mode header)."),
+    ] = _UNSET_STR,
+    file_type: Annotated[
+        str | None,
+        Field(description="'file' or 'directory' (X-Incus-type header)."),
+    ] = _UNSET_STR,
+):
+    """Upload a file to an instance. Verify skipped: body is raw content, not JSON."""
+    headers: dict[str, str] = {}
+    if uid is not _UNSET and uid is not None:
         headers["X-Incus-uid"] = str(uid)
-    if gid is not None:
+    if gid is not _UNSET and gid is not None:
         headers["X-Incus-gid"] = str(gid)
-    if mode:
-        headers["X-Incus-mode"] = mode
-    if file_type:
-        headers["X-Incus-type"] = file_type
-    return _ok(_get_client().post(f"/1.0/instances/{name}/files", params=params, headers=headers, content=content.encode()))
+    if mode is not _UNSET and mode is not None and mode != "":
+        headers["X-Incus-mode"] = str(mode)
+    if file_type is not _UNSET and file_type is not None and file_type != "":
+        headers["X-Incus-type"] = str(file_type)
+    return _ok(_get_client().post(
+        f"/1.0/instances/{name}/files",
+        params=_qp(project=project, path=path),
+        headers=headers,
+        content=content.encode(),
+    ))
 
 
 @_op(incus_write)
-def create_instance_template(name: str, template: dict):
+def create_instance_template(
+    name: str,
+    template: Annotated[
+        dict,
+        Field(description="Template spec (see Incus API for schema)."),
+    ],
+):
     """Create an instance file template."""
-    return _ok(_get_client().post(f"/1.0/instances/{name}/metadata/templates", json=template))
+    result = _get_client().post(
+        f"/1.0/instances/{name}/metadata/templates", json=template,
+    )
+    _verify_response(template, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def rebuild_instance(name: str, source: dict):
-    """Rebuild an instance from a new image source."""
-    return _ok(_get_client().post(f"/1.0/instances/{name}/rebuild", json={"source": source}))
+def rebuild_instance(
+    name: str,
+    source: Annotated[dict, Field(description=_SOURCE_INSTANCE_DESC)],
+    project: _ProjectAnn = _UNSET_STR,
+):
+    """Rebuild an instance from a new image source. Async."""
+    body: dict = {"source": source}
+    qp = _qp(project=project)
+    result = _get_client().post(
+        f"/1.0/instances/{name}/rebuild", json=body, params=qp,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/instances/{name}", qp)
+    return _ok(result)
 
 
 # ── Instance Snapshots ───────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_snapshot(name: str, snapshot_name: str, stateful: bool = False, project: str | None = None):
-    """Create an instance snapshot."""
-    body = {"name": snapshot_name, "stateful": stateful}
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().post(f"/1.0/instances/{name}/snapshots", json=body, params=params))
+def create_snapshot(
+    name: str,
+    snapshot_name: str,
+    stateful: Annotated[bool, Field(description=_STATEFUL_DESC)] = False,
+    project: _ProjectAnn = _UNSET_STR,
+):
+    """Create an instance snapshot. Async."""
+    body: dict = {"name": snapshot_name, "stateful": stateful}
+    qp = _qp(project=project)
+    result = _get_client().post(
+        f"/1.0/instances/{name}/snapshots", json=body, params=qp,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result, body, f"/1.0/instances/{name}/snapshots/{snapshot_name}", qp,
+    )
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_snapshot(name: str, snapshot: str, expires_at: str | None = None):
+def update_snapshot(
+    name: str,
+    snapshot: str,
+    expires_at: Annotated[
+        str | None,
+        Field(description="Expiration timestamp (RFC3339, e.g. '2026-12-31T00:00:00Z')."),
+    ] = _UNSET_STR,
+):
     """Update instance snapshot properties."""
     body: dict = {}
-    if expires_at is not None:
+    if expires_at is not _UNSET:
         body["expires_at"] = expires_at
-    return _ok(_get_client().put(f"/1.0/instances/{name}/snapshots/{snapshot}", json=body))
+    result = _get_client().put(
+        f"/1.0/instances/{name}/snapshots/{snapshot}", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_snapshot(name: str, snapshot: str, new_name: str):
-    """Rename an instance snapshot."""
-    return _ok(_get_client().post(f"/1.0/instances/{name}/snapshots/{snapshot}", json={"name": new_name}))
+    """Rename an instance snapshot. Async."""
+    body: dict = {"name": new_name}
+    result = _get_client().post(
+        f"/1.0/instances/{name}/snapshots/{snapshot}", json=body,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result, body, f"/1.0/instances/{name}/snapshots/{new_name}", {},
+    )
+    return _ok(result)
 
 
 # ── Instance Backups ─────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_backup(name: str, backup_name: str | None = None, compression_algorithm: str | None = None,
-                  instance_only: bool = False, optimized_storage: bool = False):
-    """Create an instance backup."""
-    body: dict = {"instance_only": instance_only, "optimized_storage": optimized_storage}
-    if backup_name:
+def create_backup(
+    name: str,
+    backup_name: Annotated[
+        str | None,
+        Field(description="Backup name (auto-generated when omitted)."),
+    ] = _UNSET_STR,
+    compression_algorithm: Annotated[
+        str | None,
+        Field(description="Compression algorithm (e.g. 'gzip', 'lzma', 'zstd')."),
+    ] = _UNSET_STR,
+    instance_only: Annotated[
+        bool, Field(description="Exclude related snapshots from the backup."),
+    ] = False,
+    optimized_storage: Annotated[
+        bool,
+        Field(description="Use storage-driver-specific format (re-importable only to same driver)."),
+    ] = False,
+):
+    """Create an instance backup. Async. Register skipped when backup_name auto-generated."""
+    body: dict = {
+        "instance_only": instance_only,
+        "optimized_storage": optimized_storage,
+    }
+    if backup_name is not _UNSET and backup_name:
         body["name"] = backup_name
-    if compression_algorithm:
+    if compression_algorithm is not _UNSET and compression_algorithm:
         body["compression_algorithm"] = compression_algorithm
-    return _ok(_get_client().post(f"/1.0/instances/{name}/backups", json=body))
+    result = _get_client().post(f"/1.0/instances/{name}/backups", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_backup(name: str, backup: str, new_name: str):
-    """Rename an instance backup."""
-    return _ok(_get_client().post(f"/1.0/instances/{name}/backups/{backup}", json={"name": new_name}))
+    """Rename an instance backup. Async."""
+    body: dict = {"name": new_name}
+    result = _get_client().post(
+        f"/1.0/instances/{name}/backups/{backup}", json=body,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result, body, f"/1.0/instances/{name}/backups/{new_name}", {},
+    )
+    return _ok(result)
 
 
 # ── Images ───────────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_image(source: dict, public: bool = False, auto_update: bool = False,
-                 properties: dict | None = None, project: str | None = None):
-    """Create/import an image. source: {"type": "url", "url": "..."} or {"type": "instance", "name": "..."}."""
-    body: dict = {"source": source, "public": public, "auto_update": auto_update}
-    if properties:
+def create_image(
+    source: Annotated[dict, Field(description=_SOURCE_IMAGE_DESC)],
+    public: Annotated[bool, Field(description="Make the image publicly readable.")] = False,
+    auto_update: Annotated[
+        bool, Field(description="Auto-refresh the image from its source periodically."),
+    ] = False,
+    properties: Annotated[
+        dict | None,
+        Field(description="Image metadata dict (arbitrary key/value)."),
+    ] = _UNSET_DICT,
+    project: _ProjectAnn = _UNSET_STR,
+):
+    """Create/import an image. Async. Register skipped: fingerprint unknown pre-wait."""
+    body: dict = {
+        "source": source,
+        "public": public,
+        "auto_update": auto_update,
+    }
+    if properties is not _UNSET:
         body["properties"] = properties
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().post("/1.0/images", json=body, params=params))
+    result = _get_client().post("/1.0/images", json=body, params=_qp(project=project))
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_image(fingerprint: str, properties: dict | None = None, public: bool | None = None,
-                 auto_update: bool | None = None, project: str | None = None):
+def update_image(
+    fingerprint: str,
+    properties: Annotated[
+        dict | None,
+        Field(description="Image metadata dict (arbitrary key/value)."),
+    ] = _UNSET_DICT,
+    public: Annotated[
+        bool | None, Field(description="Make the image publicly readable."),
+    ] = _UNSET_BOOL,
+    auto_update: Annotated[
+        bool | None, Field(description="Auto-refresh the image from its source."),
+    ] = _UNSET_BOOL,
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Update image properties (full replace)."""
     body: dict = {}
-    if properties is not None:
+    if properties is not _UNSET:
         body["properties"] = properties
-    if public is not None:
+    if public is not _UNSET:
         body["public"] = public
-    if auto_update is not None:
+    if auto_update is not _UNSET:
         body["auto_update"] = auto_update
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().put(f"/1.0/images/{fingerprint}", json=body, params=params))
+    result = _get_client().put(
+        f"/1.0/images/{fingerprint}", json=body, params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def patch_image(fingerprint: str, properties: dict | None = None, public: bool | None = None,
-                project: str | None = None):
+def patch_image(
+    fingerprint: str,
+    properties: Annotated[
+        dict | None,
+        Field(description="Image metadata dict."),
+    ] = _UNSET_DICT,
+    public: Annotated[
+        bool | None, Field(description="Make the image publicly readable."),
+    ] = _UNSET_BOOL,
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Partially update image properties."""
     body: dict = {}
-    if properties is not None:
+    if properties is not _UNSET:
         body["properties"] = properties
-    if public is not None:
+    if public is not _UNSET:
         body["public"] = public
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().patch(f"/1.0/images/{fingerprint}", json=body, params=params))
+    result = _get_client().patch(
+        f"/1.0/images/{fingerprint}", json=body, params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def refresh_image(fingerprint: str):
-    """Refresh an image from its source."""
+    """Refresh an image from its source. Async. Register skipped: empty body."""
     return _ok(_get_client().post(f"/1.0/images/{fingerprint}/refresh"))
 
 
 @_op(incus_write)
-def create_image_alias(name: str, target: str, description: str | None = None):
+def create_image_alias(
+    name: str,
+    target: Annotated[str, Field(description="Image fingerprint the alias points at.")],
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create an image alias."""
     body: dict = {"name": name, "target": target}
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post("/1.0/images/aliases", json=body))
+    result = _get_client().post("/1.0/images/aliases", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_image_alias(name: str, target: str, description: str | None = None):
+def update_image_alias(
+    name: str,
+    target: Annotated[str, Field(description="Image fingerprint the alias points at.")],
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update an image alias target."""
     body: dict = {"target": target}
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/images/aliases/{name}", json=body))
+    result = _get_client().put(f"/1.0/images/aliases/{name}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_image_alias(name: str, new_name: str):
     """Rename an image alias."""
-    return _ok(_get_client().post(f"/1.0/images/aliases/{name}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(f"/1.0/images/aliases/{name}", json=body)
+    _verify_response(body, result)
+    _register_pending_verify(
+        result, body, f"/1.0/images/aliases/{new_name}", {},
+    )
+    return _ok(result)
 
 
 # ── Networks ─────────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_network(name: str, type: str = "bridge", config: dict | None = None,
-                   description: str | None = None, project: str | None = None):
-    """Create a network."""
+def create_network(
+    name: str,
+    type: Annotated[
+        str,
+        Field(description="Network type (bridge, ovn, physical, macvlan, sriov)."),
+    ] = "bridge",
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
+    """Create a network. Async."""
     body: dict = {"name": name, "type": type}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().post("/1.0/networks", json=body, params=params))
+    qp = _qp(project=project)
+    result = _get_client().post("/1.0/networks", json=body, params=qp)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/networks/{name}", qp)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_network(name: str, config: dict | None = None, description: str | None = None,
-                   project: str | None = None):
+def update_network(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Update network configuration (full replace)."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().put(f"/1.0/networks/{name}", json=body, params=params))
+    result = _get_client().put(
+        f"/1.0/networks/{name}", json=body, params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def patch_network(name: str, config: dict | None = None, description: str | None = None,
-                  project: str | None = None):
+def patch_network(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Partially update network configuration."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().patch(f"/1.0/networks/{name}", json=body, params=params))
+    result = _get_client().patch(
+        f"/1.0/networks/{name}", json=body, params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_network(name: str, new_name: str):
-    """Rename a network."""
-    return _ok(_get_client().post(f"/1.0/networks/{name}", json={"name": new_name}))
+    """Rename a network. Async."""
+    body: dict = {"name": new_name}
+    result = _get_client().post(f"/1.0/networks/{name}", json=body)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/networks/{new_name}", {})
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_network_forward(network: str, listen_address: str, config: dict | None = None,
-                           ports: list[dict] | None = None):
+def create_network_forward(
+    network: str,
+    listen_address: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    ports: Annotated[
+        list[dict] | None,
+        Field(description="Forward port specs (list of {'protocol', 'listen_port', 'target_port', 'target_address'})."),
+    ] = _UNSET_LIST_DICT,
+):
     """Create a network address forward."""
     body: dict = {"listen_address": listen_address}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if ports:
+    if ports is not _UNSET:
         body["ports"] = ports
-    return _ok(_get_client().post(f"/1.0/networks/{network}/forwards", json=body))
+    result = _get_client().post(f"/1.0/networks/{network}/forwards", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_network_forward(network: str, listen_address: str, config: dict | None = None,
-                           ports: list[dict] | None = None):
+def update_network_forward(
+    network: str,
+    listen_address: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    ports: Annotated[
+        list[dict] | None,
+        Field(description="Forward port specs."),
+    ] = _UNSET_LIST_DICT,
+):
     """Update a network address forward."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if ports is not None:
+    if ports is not _UNSET:
         body["ports"] = ports
-    return _ok(_get_client().put(f"/1.0/networks/{network}/forwards/{listen_address}", json=body))
+    result = _get_client().put(
+        f"/1.0/networks/{network}/forwards/{listen_address}", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_load_balancer(network: str, listen_address: str, config: dict | None = None,
-                         backends: list[dict] | None = None, ports: list[dict] | None = None):
+def create_load_balancer(
+    network: str,
+    listen_address: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    backends: Annotated[
+        list[dict] | None,
+        Field(description="Backend specs (list of {'name', 'target_address', 'target_port'})."),
+    ] = _UNSET_LIST_DICT,
+    ports: Annotated[
+        list[dict] | None,
+        Field(description="LB port specs."),
+    ] = _UNSET_LIST_DICT,
+):
     """Create a network load balancer."""
     body: dict = {"listen_address": listen_address}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if backends:
+    if backends is not _UNSET:
         body["backends"] = backends
-    if ports:
+    if ports is not _UNSET:
         body["ports"] = ports
-    return _ok(_get_client().post(f"/1.0/networks/{network}/load-balancers", json=body))
+    result = _get_client().post(
+        f"/1.0/networks/{network}/load-balancers", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_load_balancer(network: str, listen_address: str, config: dict | None = None,
-                         backends: list[dict] | None = None, ports: list[dict] | None = None):
+def update_load_balancer(
+    network: str,
+    listen_address: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    backends: Annotated[
+        list[dict] | None, Field(description="Backend specs."),
+    ] = _UNSET_LIST_DICT,
+    ports: Annotated[
+        list[dict] | None, Field(description="LB port specs."),
+    ] = _UNSET_LIST_DICT,
+):
     """Update a network load balancer."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if backends is not None:
+    if backends is not _UNSET:
         body["backends"] = backends
-    if ports is not None:
+    if ports is not _UNSET:
         body["ports"] = ports
-    return _ok(_get_client().put(f"/1.0/networks/{network}/load-balancers/{listen_address}", json=body))
+    result = _get_client().put(
+        f"/1.0/networks/{network}/load-balancers/{listen_address}", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_network_peer(network: str, name: str, target_network: str, target_project: str | None = None,
-                        config: dict | None = None):
+def create_network_peer(
+    network: str,
+    name: str,
+    target_network: Annotated[
+        str, Field(description="Peer network name in the target project."),
+    ],
+    target_project: Annotated[
+        str | None,
+        Field(description="Target project (defaults to caller's project)."),
+    ] = _UNSET_STR,
+    config: _ConfigAnn = _UNSET_DICT,
+):
     """Create a network peer."""
     body: dict = {"name": name, "target_network": target_network}
-    if target_project:
+    if target_project is not _UNSET:
         body["target_project"] = target_project
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    return _ok(_get_client().post(f"/1.0/networks/{network}/peers", json=body))
+    result = _get_client().post(f"/1.0/networks/{network}/peers", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_network_peer(network: str, peer: str, config: dict | None = None):
+def update_network_peer(
+    network: str,
+    peer: str,
+    config: _ConfigAnn = _UNSET_DICT,
+):
     """Update a network peer."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    return _ok(_get_client().put(f"/1.0/networks/{network}/peers/{peer}", json=body))
+    result = _get_client().put(f"/1.0/networks/{network}/peers/{peer}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 # ── Network ACLs ─────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_network_acl(name: str, egress: list[dict] | None = None, ingress: list[dict] | None = None,
-                       config: dict | None = None, description: str | None = None):
+def create_network_acl(
+    name: str,
+    egress: Annotated[
+        list[dict] | None,
+        Field(description="Egress rules (each rule: action/destination/protocol/...)."),
+    ] = _UNSET_LIST_DICT,
+    ingress: Annotated[
+        list[dict] | None, Field(description="Ingress rules (same schema as egress)."),
+    ] = _UNSET_LIST_DICT,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a network ACL."""
     body: dict = {"name": name}
-    if egress:
+    if egress is not _UNSET:
         body["egress"] = egress
-    if ingress:
+    if ingress is not _UNSET:
         body["ingress"] = ingress
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post("/1.0/network-acls", json=body))
+    result = _get_client().post("/1.0/network-acls", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_network_acl(name: str, egress: list[dict] | None = None, ingress: list[dict] | None = None,
-                       config: dict | None = None, description: str | None = None):
+def update_network_acl(
+    name: str,
+    egress: Annotated[
+        list[dict] | None, Field(description="Egress rules."),
+    ] = _UNSET_LIST_DICT,
+    ingress: Annotated[
+        list[dict] | None, Field(description="Ingress rules."),
+    ] = _UNSET_LIST_DICT,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update a network ACL (full replace)."""
     body: dict = {}
-    if egress is not None:
+    if egress is not _UNSET:
         body["egress"] = egress
-    if ingress is not None:
+    if ingress is not _UNSET:
         body["ingress"] = ingress
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/network-acls/{name}", json=body))
+    result = _get_client().put(f"/1.0/network-acls/{name}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_network_acl(name: str, new_name: str):
     """Rename a network ACL."""
-    return _ok(_get_client().post(f"/1.0/network-acls/{name}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(f"/1.0/network-acls/{name}", json=body)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/network-acls/{new_name}", {})
+    return _ok(result)
 
 
 # ── Network Address Sets ─────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_network_address_set(name: str, addresses: list[str] | None = None,
-                               description: str | None = None):
+def create_network_address_set(
+    name: str,
+    addresses: Annotated[
+        list[str] | None,
+        Field(description="IP addresses or CIDR ranges."),
+    ] = _UNSET_LIST_STR,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a network address set."""
     body: dict = {"name": name}
-    if addresses:
+    if addresses is not _UNSET:
         body["addresses"] = addresses
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post("/1.0/network-address-sets", json=body))
+    result = _get_client().post("/1.0/network-address-sets", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_network_address_set(name: str, addresses: list[str] | None = None,
-                               description: str | None = None):
+def update_network_address_set(
+    name: str,
+    addresses: Annotated[
+        list[str] | None,
+        Field(description="IP addresses or CIDR ranges."),
+    ] = _UNSET_LIST_STR,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update a network address set."""
     body: dict = {}
-    if addresses is not None:
+    if addresses is not _UNSET:
         body["addresses"] = addresses
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/network-address-sets/{name}", json=body))
+    result = _get_client().put(f"/1.0/network-address-sets/{name}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_network_address_set(name: str, new_name: str):
     """Rename a network address set."""
-    return _ok(_get_client().post(f"/1.0/network-address-sets/{name}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(
+        f"/1.0/network-address-sets/{name}", json=body,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result, body, f"/1.0/network-address-sets/{new_name}", {},
+    )
+    return _ok(result)
 
 
 # ── Network Integrations ─────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_network_integration(name: str, type: str, config: dict | None = None,
-                               description: str | None = None):
+def create_network_integration(
+    name: str,
+    type: Annotated[str, Field(description="Integration type (e.g. 'ovn').")],
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a network integration."""
     body: dict = {"name": name, "type": type}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post("/1.0/network-integrations", json=body))
+    result = _get_client().post("/1.0/network-integrations", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_network_integration(name: str, config: dict | None = None, description: str | None = None):
+def update_network_integration(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update a network integration."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/network-integrations/{name}", json=body))
+    result = _get_client().put(f"/1.0/network-integrations/{name}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_network_integration(name: str, new_name: str):
     """Rename a network integration."""
-    return _ok(_get_client().post(f"/1.0/network-integrations/{name}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(
+        f"/1.0/network-integrations/{name}", json=body,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result, body, f"/1.0/network-integrations/{new_name}", {},
+    )
+    return _ok(result)
 
 
 # ── Network Zones ────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_network_zone(name: str, config: dict | None = None, description: str | None = None):
-    """Create a network zone."""
+def create_network_zone(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
+    """Create a network zone (DNS)."""
     body: dict = {"name": name}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post("/1.0/network-zones", json=body))
+    result = _get_client().post("/1.0/network-zones", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_network_zone(zone: str, config: dict | None = None, description: str | None = None):
+def update_network_zone(
+    zone: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update a network zone."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/network-zones/{zone}", json=body))
+    result = _get_client().put(f"/1.0/network-zones/{zone}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_zone_record(zone: str, name: str, entries: list[dict] | None = None,
-                       config: dict | None = None, description: str | None = None):
+def create_zone_record(
+    zone: str,
+    name: str,
+    entries: Annotated[
+        list[dict] | None,
+        Field(description="DNS record entries (list of {'type': 'A', 'value': '10.0.0.1', ...})."),
+    ] = _UNSET_LIST_DICT,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a DNS record in a network zone."""
     body: dict = {"name": name}
-    if entries:
+    if entries is not _UNSET:
         body["entries"] = entries
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post(f"/1.0/network-zones/{zone}/records", json=body))
+    result = _get_client().post(
+        f"/1.0/network-zones/{zone}/records", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_zone_record(zone: str, name: str, entries: list[dict] | None = None,
-                       config: dict | None = None, description: str | None = None):
+def update_zone_record(
+    zone: str,
+    name: str,
+    entries: Annotated[
+        list[dict] | None, Field(description="DNS record entries."),
+    ] = _UNSET_LIST_DICT,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update a DNS record in a network zone."""
     body: dict = {}
-    if entries is not None:
+    if entries is not _UNSET:
         body["entries"] = entries
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/network-zones/{zone}/records/{name}", json=body))
+    result = _get_client().put(
+        f"/1.0/network-zones/{zone}/records/{name}", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 # ── Storage Pools ────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_storage_pool(name: str, driver: str, config: dict | None = None,
-                        description: str | None = None):
+def create_storage_pool(
+    name: str,
+    driver: Annotated[
+        str, Field(description="Storage driver (zfs, btrfs, dir, lvm, ceph, cephfs, ...)."),
+    ],
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a storage pool."""
     body: dict = {"name": name, "driver": driver}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post("/1.0/storage-pools", json=body))
+    result = _get_client().post("/1.0/storage-pools", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_storage_pool(pool: str, config: dict | None = None, description: str | None = None):
+def update_storage_pool(
+    pool: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update storage pool configuration."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/storage-pools/{pool}", json=body))
+    result = _get_client().put(f"/1.0/storage-pools/{pool}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 # ── Storage Volumes ──────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_volume(pool: str, name: str, type: str = "custom", config: dict | None = None,
-                  content_type: str | None = None, project: str | None = None):
-    """Create a storage volume."""
+def create_volume(
+    pool: str,
+    name: str,
+    type: Annotated[
+        str,
+        Field(description="Volume type (custom, container, image, virtual-machine)."),
+    ] = "custom",
+    config: _ConfigAnn = _UNSET_DICT,
+    content_type: Annotated[
+        str | None,
+        Field(description="Volume content type ('filesystem' or 'block')."),
+    ] = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
+    """Create a storage volume. Async."""
     body: dict = {"name": name, "type": type}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if content_type:
+    if content_type is not _UNSET:
         body["content_type"] = content_type
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/volumes", json=body, params=params))
+    qp = _qp(project=project)
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/volumes", json=body, params=qp,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result, body, f"/1.0/storage-pools/{pool}/volumes/{type}/{name}", qp,
+    )
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_volume(pool: str, type: str, volume: str, config: dict | None = None,
-                  description: str | None = None, project: str | None = None):
+def update_volume(
+    pool: str,
+    type: str,
+    volume: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Update storage volume configuration."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().put(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", json=body, params=params))
+    result = _get_client().put(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}",
+        json=body,
+        params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_volume(pool: str, type: str, volume: str, new_name: str):
-    """Rename/move a storage volume."""
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", json={"name": new_name}))
+    """Rename/move a storage volume. Async."""
+    body: dict = {"name": new_name}
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", json=body,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result,
+        body,
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{new_name}",
+        {},
+    )
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_volume_snapshot(pool: str, type: str, volume: str, snapshot_name: str):
+def create_volume_snapshot(
+    pool: str,
+    type: str,
+    volume: str,
+    snapshot_name: str,
+):
     """Create a volume snapshot."""
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots", json={"name": snapshot_name}))
+    body: dict = {"name": snapshot_name}
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots",
+        json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_volume_snapshot(pool: str, type: str, volume: str, snapshot: str,
-                           expires_at: str | None = None, description: str | None = None):
+def update_volume_snapshot(
+    pool: str,
+    type: str,
+    volume: str,
+    snapshot: str,
+    expires_at: Annotated[
+        str | None,
+        Field(description="Expiration timestamp (RFC3339)."),
+    ] = _UNSET_STR,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update volume snapshot properties."""
     body: dict = {}
-    if expires_at is not None:
+    if expires_at is not _UNSET:
         body["expires_at"] = expires_at
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}", json=body))
+    result = _get_client().put(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}",
+        json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def rename_volume_snapshot(pool: str, type: str, volume: str, snapshot: str, new_name: str):
+def rename_volume_snapshot(
+    pool: str,
+    type: str,
+    volume: str,
+    snapshot: str,
+    new_name: str,
+):
     """Rename a volume snapshot."""
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}",
+        json=body,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result,
+        body,
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{new_name}",
+        {},
+    )
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_volume_backup(pool: str, type: str, volume: str, backup_name: str | None = None,
-                         compression_algorithm: str | None = None, volume_only: bool = False,
-                         optimized_storage: bool = False):
-    """Create a volume backup."""
+def create_volume_backup(
+    pool: str,
+    type: str,
+    volume: str,
+    backup_name: Annotated[
+        str | None,
+        Field(description="Backup name (auto-generated when omitted)."),
+    ] = _UNSET_STR,
+    compression_algorithm: Annotated[
+        str | None,
+        Field(description="Compression algorithm (e.g. 'gzip')."),
+    ] = _UNSET_STR,
+    volume_only: Annotated[
+        bool, Field(description="Exclude related volumes from the backup."),
+    ] = False,
+    optimized_storage: Annotated[
+        bool,
+        Field(description="Use storage-driver-specific format."),
+    ] = False,
+):
+    """Create a volume backup. Async. Register skipped when backup_name auto-generated."""
     body: dict = {"volume_only": volume_only, "optimized_storage": optimized_storage}
-    if backup_name:
+    if backup_name is not _UNSET and backup_name:
         body["name"] = backup_name
-    if compression_algorithm:
+    if compression_algorithm is not _UNSET and compression_algorithm:
         body["compression_algorithm"] = compression_algorithm
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups", json=body))
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def rename_volume_backup(pool: str, type: str, volume: str, backup: str, new_name: str):
+def rename_volume_backup(
+    pool: str, type: str, volume: str, backup: str, new_name: str,
+):
     """Rename a volume backup."""
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{backup}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{backup}",
+        json=body,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result,
+        body,
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{new_name}",
+        {},
+    )
+    return _ok(result)
 
 
 # ── Storage Buckets ──────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_bucket(pool: str, name: str, config: dict | None = None, description: str | None = None):
+def create_bucket(
+    pool: str,
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a storage bucket."""
     body: dict = {"name": name}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/buckets", json=body))
+    result = _get_client().post(f"/1.0/storage-pools/{pool}/buckets", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_bucket(pool: str, bucket: str, config: dict | None = None, description: str | None = None):
+def update_bucket(
+    pool: str,
+    bucket: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update storage bucket configuration."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/storage-pools/{pool}/buckets/{bucket}", json=body))
+    result = _get_client().put(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_bucket_key(pool: str, bucket: str, name: str, role: str = "read-only",
-                      description: str | None = None):
+def create_bucket_key(
+    pool: str,
+    bucket: str,
+    name: str,
+    role: Annotated[
+        str, Field(description="Access role ('read-only' or 'admin')."),
+    ] = "read-only",
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a storage bucket access key."""
     body: dict = {"name": name, "role": role}
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys", json=body))
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_bucket_key(pool: str, bucket: str, key: str, role: str | None = None,
-                      description: str | None = None):
+def update_bucket_key(
+    pool: str,
+    bucket: str,
+    key: str,
+    role: Annotated[
+        str | None, Field(description="Access role ('read-only' or 'admin')."),
+    ] = _UNSET_STR,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update a storage bucket access key."""
     body: dict = {}
-    if role is not None:
+    if role is not _UNSET:
         body["role"] = role
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys/{key}", json=body))
+    result = _get_client().put(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys/{key}", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_bucket_backup(pool: str, bucket: str, backup_name: str | None = None,
-                         compression_algorithm: str | None = None):
+def create_bucket_backup(
+    pool: str,
+    bucket: str,
+    backup_name: Annotated[
+        str | None,
+        Field(description="Backup name (auto-generated when omitted)."),
+    ] = _UNSET_STR,
+    compression_algorithm: Annotated[
+        str | None, Field(description="Compression algorithm (e.g. 'gzip')."),
+    ] = _UNSET_STR,
+):
     """Create a storage bucket backup."""
     body: dict = {}
-    if backup_name:
+    if backup_name is not _UNSET and backup_name:
         body["name"] = backup_name
-    if compression_algorithm:
+    if compression_algorithm is not _UNSET and compression_algorithm:
         body["compression_algorithm"] = compression_algorithm
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups", json=body))
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups", json=body,
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_bucket_backup(pool: str, bucket: str, backup: str, new_name: str):
     """Rename a storage bucket backup."""
-    return _ok(_get_client().post(f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{backup}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{backup}",
+        json=body,
+    )
+    _verify_response(body, result)
+    _register_pending_verify(
+        result,
+        body,
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{new_name}",
+        {},
+    )
+    return _ok(result)
 
 
 # ── Profiles ─────────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_profile(name: str, config: dict | None = None, devices: dict | None = None,
-                   description: str | None = None, project: str | None = None):
+def create_profile(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    devices: _DevicesAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Create a profile."""
     body: dict = {"name": name}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if devices:
+    if devices is not _UNSET:
         body["devices"] = devices
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().post("/1.0/profiles", json=body, params=params))
+    result = _get_client().post(
+        "/1.0/profiles", json=body, params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_profile(name: str, config: dict | None = None, devices: dict | None = None,
-                   description: str | None = None, project: str | None = None):
+def update_profile(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    devices: _DevicesAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Update a profile (full replace)."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if devices is not None:
+    if devices is not _UNSET:
         body["devices"] = devices
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().put(f"/1.0/profiles/{name}", json=body, params=params))
+    result = _get_client().put(
+        f"/1.0/profiles/{name}", json=body, params=_qp(project=project),
+    )
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_profile(name: str, new_name: str):
     """Rename a profile."""
-    return _ok(_get_client().post(f"/1.0/profiles/{name}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(f"/1.0/profiles/{name}", json=body)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/profiles/{new_name}", {})
+    return _ok(result)
 
 
 # ── Projects ─────────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def create_project(name: str, config: dict | None = None, description: str | None = None):
+def create_project(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a project."""
     body: dict = {"name": name}
-    if config:
+    if config is not _UNSET:
         body["config"] = config
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post("/1.0/projects", json=body))
+    result = _get_client().post("/1.0/projects", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_project(name: str, config: dict | None = None, description: str | None = None):
+def update_project(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update a project (full replace)."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/projects/{name}", json=body))
+    result = _get_client().put(f"/1.0/projects/{name}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_project(name: str, new_name: str):
     """Rename a project."""
-    return _ok(_get_client().post(f"/1.0/projects/{name}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(f"/1.0/projects/{name}", json=body)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/projects/{new_name}", {})
+    return _ok(result)
 
 
 # ── Cluster ──────────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def update_cluster(server_name: str | None = None, enabled: bool | None = None,
-                   cluster_address: str | None = None):
+def update_cluster(
+    server_name: Annotated[
+        str | None, Field(description="Cluster server name."),
+    ] = _UNSET_STR,
+    enabled: Annotated[
+        bool | None, Field(description="Whether clustering is enabled."),
+    ] = _UNSET_BOOL,
+    cluster_address: Annotated[
+        str | None, Field(description="Cluster network address (host:port)."),
+    ] = _UNSET_STR,
+):
     """Update cluster configuration."""
     body: dict = {}
-    if server_name is not None:
+    if server_name is not _UNSET:
         body["server_name"] = server_name
-    if enabled is not None:
+    if enabled is not _UNSET:
         body["enabled"] = enabled
-    if cluster_address is not None:
+    if cluster_address is not _UNSET:
         body["cluster_address"] = cluster_address
-    return _ok(_get_client().put("/1.0/cluster", json=body))
+    result = _get_client().put("/1.0/cluster", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_cluster_certificate(cluster_certificate: str, cluster_certificate_key: str):
-    """Update the cluster certificate."""
-    body = {"cluster_certificate": cluster_certificate, "cluster_certificate_key": cluster_certificate_key}
+def update_cluster_certificate(
+    cluster_certificate: Annotated[
+        str, Field(description="PEM-encoded cluster certificate."),
+    ],
+    cluster_certificate_key: Annotated[
+        str,
+        Field(description="PEM-encoded cluster private key (write-only; never echoed back)."),
+    ],
+):
+    """Update the cluster certificate. Verify skipped: private key isn't round-tripped."""
+    body: dict = {
+        "cluster_certificate": cluster_certificate,
+        "cluster_certificate_key": cluster_certificate_key,
+    }
     return _ok(_get_client().put("/1.0/cluster/certificate", json=body))
 
 
 @_op(incus_write)
 def request_join_token(name: str):
     """Request a cluster join token for a new member."""
-    return _ok(_get_client().post("/1.0/cluster/members", json={"server_name": name}))
+    body: dict = {"server_name": name}
+    result = _get_client().post("/1.0/cluster/members", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_cluster_member(name: str, config: dict | None = None, description: str | None = None,
-                          groups: list[str] | None = None):
+def update_cluster_member(
+    name: str,
+    config: _ConfigAnn = _UNSET_DICT,
+    description: _DescriptionAnn = _UNSET_STR,
+    groups: Annotated[
+        list[str] | None,
+        Field(description="Cluster group names this member belongs to."),
+    ] = _UNSET_LIST_STR,
+):
     """Update cluster member configuration."""
     body: dict = {}
-    if config is not None:
+    if config is not _UNSET:
         body["config"] = config
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    if groups is not None:
+    if groups is not _UNSET:
         body["groups"] = groups
-    return _ok(_get_client().put(f"/1.0/cluster/members/{name}", json=body))
+    result = _get_client().put(f"/1.0/cluster/members/{name}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_cluster_member(name: str, new_name: str):
     """Rename a cluster member."""
-    return _ok(_get_client().post(f"/1.0/cluster/members/{name}", json={"server_name": new_name}))
+    body: dict = {"server_name": new_name}
+    result = _get_client().post(f"/1.0/cluster/members/{name}", json=body)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/cluster/members/{new_name}", {})
+    return _ok(result)
 
 
 @_op(incus_write)
-def create_cluster_group(name: str, members: list[str] | None = None, description: str | None = None):
+def create_cluster_group(
+    name: str,
+    members: Annotated[
+        list[str] | None,
+        Field(description="Cluster member names to include in the group."),
+    ] = _UNSET_LIST_STR,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Create a cluster group."""
     body: dict = {"name": name}
-    if members:
+    if members is not _UNSET:
         body["members"] = members
-    if description:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().post("/1.0/cluster/groups", json=body))
+    result = _get_client().post("/1.0/cluster/groups", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_cluster_group(name: str, members: list[str] | None = None, description: str | None = None):
+def update_cluster_group(
+    name: str,
+    members: Annotated[
+        list[str] | None,
+        Field(description="Cluster member names to include."),
+    ] = _UNSET_LIST_STR,
+    description: _DescriptionAnn = _UNSET_STR,
+):
     """Update a cluster group."""
     body: dict = {}
-    if members is not None:
+    if members is not _UNSET:
         body["members"] = members
-    if description is not None:
+    if description is not _UNSET:
         body["description"] = description
-    return _ok(_get_client().put(f"/1.0/cluster/groups/{name}", json=body))
+    result = _get_client().put(f"/1.0/cluster/groups/{name}", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
 def rename_cluster_group(name: str, new_name: str):
     """Rename a cluster group."""
-    return _ok(_get_client().post(f"/1.0/cluster/groups/{name}", json={"name": new_name}))
+    body: dict = {"name": new_name}
+    result = _get_client().post(f"/1.0/cluster/groups/{name}", json=body)
+    _verify_response(body, result)
+    _register_pending_verify(result, body, f"/1.0/cluster/groups/{new_name}", {})
+    return _ok(result)
 
 
 # ── Certificates ─────────────────────────────────────────────────────
 
 
 @_op(incus_write)
-def add_certificate(certificate: str, name: str | None = None, type: str = "client",
-                    restricted: bool = False, projects: list[str] | None = None):
+def add_certificate(
+    certificate: Annotated[str, Field(description="PEM-encoded certificate.")],
+    name: Annotated[
+        str | None, Field(description="Human-readable name for the certificate."),
+    ] = _UNSET_STR,
+    type: Annotated[
+        str, Field(description="Certificate type (usually 'client')."),
+    ] = "client",
+    restricted: Annotated[
+        bool,
+        Field(description="Restrict this cert to specific projects (see 'projects')."),
+    ] = False,
+    projects: Annotated[
+        list[str] | None,
+        Field(description="Project names this cert is restricted to."),
+    ] = _UNSET_LIST_STR,
+):
     """Add a trusted certificate."""
-    body: dict = {"certificate": certificate, "type": type, "restricted": restricted}
-    if name:
+    body: dict = {
+        "certificate": certificate,
+        "type": type,
+        "restricted": restricted,
+    }
+    if name is not _UNSET and name:
         body["name"] = name
-    if projects:
+    if projects is not _UNSET:
         body["projects"] = projects
-    return _ok(_get_client().post("/1.0/certificates", json=body))
+    result = _get_client().post("/1.0/certificates", json=body)
+    _verify_response(body, result)
+    return _ok(result)
 
 
 @_op(incus_write)
-def update_certificate(fingerprint: str, certificate: str | None = None, name: str | None = None,
-                       restricted: bool | None = None, projects: list[str] | None = None):
+def update_certificate(
+    fingerprint: str,
+    certificate: Annotated[
+        str | None, Field(description="PEM-encoded certificate."),
+    ] = _UNSET_STR,
+    name: Annotated[
+        str | None, Field(description="Human-readable name."),
+    ] = _UNSET_STR,
+    restricted: Annotated[
+        bool | None, Field(description="Restrict to specific projects."),
+    ] = _UNSET_BOOL,
+    projects: Annotated[
+        list[str] | None,
+        Field(description="Restricted project names."),
+    ] = _UNSET_LIST_STR,
+):
     """Update a trusted certificate."""
     body: dict = {}
-    if certificate is not None:
+    if certificate is not _UNSET:
         body["certificate"] = certificate
-    if name is not None:
+    if name is not _UNSET:
         body["name"] = name
-    if restricted is not None:
+    if restricted is not _UNSET:
         body["restricted"] = restricted
-    if projects is not None:
+    if projects is not _UNSET:
         body["projects"] = projects
-    return _ok(_get_client().put(f"/1.0/certificates/{fingerprint}", json=body))
+    result = _get_client().put(f"/1.0/certificates/{fingerprint}", json=body)
+    _verify_response(body, result)
+    return _ok(result)

@@ -20,16 +20,18 @@ TEST_BASE_URL = "https://incus.test:8443"
 
 @pytest.fixture(autouse=True)
 def _reset_state():
-    """Drop settings + client singletons before every test.
+    """Drop settings + client singletons + pending-verify registry before every test.
 
-    Prevents any earlier test's env / mocked client from leaking into the
-    next case's setup.
+    Prevents any earlier test's env / mocked client / registered async
+    write-verify entries from leaking into the next case's setup.
     """
     _reset_settings()
     helpers._client = None
+    helpers._pending_verify.clear()
     yield
     _reset_settings()
     helpers._client = None
+    helpers._pending_verify.clear()
 
 
 @pytest.fixture

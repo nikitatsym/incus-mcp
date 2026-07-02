@@ -14,20 +14,17 @@ from .helpers import (
     SLIM_PROFILE,
     SLIM_PROJECT,
     SLIM_VOLUME,
+    _ALL_PROJECTS_DESC,
+    _API_FILTER_DESC,
+    _PROJECT_DESC,
+    _REGEX_FILTER_DESC,
+    _TAIL_DESC,
+    _VOLUME_TYPE_DESC,
     _get_client,
     _qp,
     _slim_list,
     _tail_filter,
 )
-
-_PROJECT_DESC = "Incus project (default project when omitted)."
-_API_FILTER_DESC = (
-    "Incus API filter expression (e.g. 'status eq Running,type eq container')."
-)
-_REGEX_FILTER_DESC = "Regex applied line by line before tail."
-_TAIL_DESC = "Return last N lines (0 = full content)."
-_ALL_PROJECTS_DESC = "List across every project the caller can see."
-_VOLUME_TYPE_DESC = "Filter by volume type (custom, container, image, virtual-machine)."
 
 
 # ── Version ──────────────────────────────────────────────────────────
