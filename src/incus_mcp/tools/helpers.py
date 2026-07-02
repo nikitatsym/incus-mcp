@@ -83,3 +83,34 @@ def _qp(
         if v is not None:
             params[k] = str(v)
     return params
+
+
+# Root-level only. `devices.root.source` and `devices.disk.mode` are
+# real config values, not the top-level transport names.
+_SKIP_VERIFY_ROOT: frozenset[str] = frozenset({
+    "source", "project", "target", "force", "stateful",
+    "uid", "gid", "mode", "file_type", "content",  # file-upload channels
+})
+
+
+def _verify_response(sent: dict, received, path: str = "") -> None:
+    """Raise if the API silently dropped a key we sent (recursive).
+
+    Incus returns unknown-key namespaces as an empty dict without a 4xx.
+    """
+    if not isinstance(received, dict):
+        return
+    if received.get("class") == "task":
+        return  # async op; deferred check runs post-terminal
+    for key, value in sent.items():
+        if path == "" and key in _SKIP_VERIFY_ROOT:
+            continue
+        full = f"{path}.{key}" if path else key
+        if key not in received:
+            raise ValueError(
+                f"Incus silently dropped '{full}'. Resource may have been "
+                f"created but the field was ignored. Check value format, "
+                f"config namespace, or device type."
+            )
+        if isinstance(value, dict) and value:
+            _verify_response(value, received[key], full)
