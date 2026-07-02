@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import asyncio
+import time
 from typing import Annotated, cast
 
 from mcp.server.fastmcp import Image
 from pydantic import Field
 
+from .. import wait_registry as _wr
+from ..client import APIError
 from ..registry import ROOT, _UNSET, _op
 from .groups import incus_read
 from .helpers import (
@@ -20,10 +24,12 @@ from .helpers import (
     _REGEX_FILTER_DESC,
     _TAIL_DESC,
     _VOLUME_TYPE_DESC,
+    _drain_pending_verify,
     _get_client,
     _qp,
     _slim_list,
     _tail_filter,
+    _verify_response,
 )
 
 
@@ -835,8 +841,202 @@ def show_operation(id: str):
 
 @_op(incus_read)
 def wait_operation(id: str):
-    """Wait for an operation to complete."""
-    return _get_client().get(f"/1.0/operations/{id}/wait")
+    """Wait for an operation to complete via Incus's server-side long-poll.
+
+    Blocks the FastMCP event loop until Incus responds. One-shot short waits
+    only; prefer OperationWaitStart for slow operations. On terminal success
+    (status_code == 200), drains any pending-verify entry for `id` and raises
+    ValueError if the target GET reveals a silent-drop of a sent config key.
+    """
+    result = _get_client().get(f"/1.0/operations/{id}/wait")
+    if isinstance(result, dict) and result.get("status_code") == 200:
+        entry = _drain_pending_verify(id)
+        if entry is not None:
+            sent, target_path, target_qp = entry
+            target = _get_client().get(target_path, params=target_qp or None)
+            _verify_response(sent, target)
+    return result
+
+
+# ── Operation waiters (non-blocking) ─────────────────────────────────
+
+
+async def _poll(
+    handle: _wr.WaitHandle,
+    interval: float,
+    timeout: float,
+    max_poll_failures: int,
+    max_lifetime: float,
+) -> None:
+    """Background poll loop. Sole writer to the handle's mutable state."""
+    op_path = f"/1.0/operations/{handle.operation_id}"
+    consecutive_failures = 0
+    while True:
+        elapsed = time.time() - handle.started_at
+        if elapsed > max_lifetime:
+            handle.mark_timed_out(f"max_lifetime {max_lifetime}s exceeded")
+            return
+        if elapsed > timeout:
+            handle.mark_timed_out(f"timeout {timeout}s exceeded")
+            return
+        try:
+            payload = await asyncio.to_thread(_get_client().get, op_path)
+        except APIError as exc:
+            if 400 <= exc.status < 500 and exc.status != 429:
+                handle.record_poll_failure(str(exc))
+                handle.mark_terminated(err=str(exc))
+                return
+            consecutive_failures += 1
+            handle.record_poll_failure(str(exc))
+            if consecutive_failures > max_poll_failures:
+                handle.mark_terminated(err=f"{consecutive_failures} consecutive poll failures")
+                return
+            await asyncio.sleep(interval)
+            continue
+        except Exception as exc:
+            consecutive_failures += 1
+            handle.record_poll_failure(str(exc))
+            if consecutive_failures > max_poll_failures:
+                handle.mark_terminated(err=f"{consecutive_failures} consecutive poll failures")
+                return
+            await asyncio.sleep(interval)
+            continue
+
+        consecutive_failures = 0
+        handle.polls += 1
+        handle.last_payload = payload
+        if isinstance(payload, dict):
+            handle.record_transition(payload.get("status"), payload.get("status_code"))
+            code = payload.get("status_code")
+            if isinstance(code, int) and code in _wr.TERMINAL_STATUS_CODES:
+                if code == 200:
+                    await _run_drain(handle)
+                handle.mark_terminated()
+                return
+        await asyncio.sleep(interval)
+
+
+async def _run_drain(handle: _wr.WaitHandle) -> None:
+    """Fetch target resource and verify sent-vs-returned; store any drop on the handle."""
+    entry = _drain_pending_verify(handle.operation_id)
+    if entry is None:
+        return
+    sent, target_path, target_qp = entry
+    try:
+        target = await asyncio.to_thread(
+            _get_client().get, target_path, params=target_qp or None,
+        )
+        _verify_response(sent, target)
+    except ValueError as exc:
+        handle.verify_error = str(exc)
+    except Exception as exc:
+        handle.enrichment_error = str(exc)
+
+
+@_op(incus_read)
+async def operation_wait_start(
+    operation_id: Annotated[
+        str,
+        Field(description="UUID of the Incus operation to wait for (from an async POST's response)."),
+    ],
+    timeout: Annotated[int, Field(description="Seconds to poll before timing out. Default 600.")] = 600,
+    interval: Annotated[int, Field(description="Seconds between polls. Default 5.")] = 5,
+    max_poll_failures: Annotated[
+        int,
+        Field(description="Consecutive transient failures tolerated before giving up. Default 3."),
+    ] = 3,
+    max_lifetime: Annotated[
+        int,
+        Field(description="Absolute lifetime cap on the background task (0 = off). Default 7200 (2h)."),
+    ] = 7200,
+) -> dict:
+    """Start a non-blocking wait on an Incus operation.
+
+    Runs one inline probe first (bad UUID / no access surfaces immediately as
+    APIError). If already terminal, drains pending-verify synchronously and
+    returns the snapshot without spawning a task. Otherwise spawns a
+    background poll task and returns the current snapshot immediately; use
+    OperationWaitPoll to await completion, OperationWaitCancel to stop.
+    Verify-on-completion is best-effort and only applies within this MCP
+    process lifetime that ran the write.
+    """
+    if interval <= 0:
+        raise ValueError(f"interval must be > 0, got {interval}")
+    if max_poll_failures < 1:
+        raise ValueError(f"max_poll_failures must be >= 1, got {max_poll_failures}")
+
+    payload = await asyncio.to_thread(
+        _get_client().get, f"/1.0/operations/{operation_id}",
+    )
+    handle = _wr.create_handle(operation_id, {
+        "timeout": timeout,
+        "interval": interval,
+        "max_poll_failures": max_poll_failures,
+        "max_lifetime": max_lifetime,
+    })
+    handle.polls = 1
+    handle.last_payload = payload
+    if isinstance(payload, dict):
+        handle.record_transition(payload.get("status"), payload.get("status_code"))
+        code = payload.get("status_code")
+        if isinstance(code, int) and code in _wr.TERMINAL_STATUS_CODES:
+            if code == 200:
+                await _run_drain(handle)
+            handle.mark_terminated()
+            return handle.snapshot()
+
+    handle.task = asyncio.create_task(
+        _poll(handle, interval, timeout, max_poll_failures, max_lifetime),
+    )
+    return handle.snapshot()
+
+
+@_op(incus_read)
+async def operation_wait_poll(
+    wait_id: Annotated[str, Field(description="Wait handle ID returned by OperationWaitStart.")],
+    max_block: Annotated[
+        float,
+        Field(description="Seconds to await the completion event before returning current snapshot. 0 = snapshot now. Default 0."),
+    ] = 0,
+) -> dict:
+    """Return the current snapshot for a wait handle, optionally blocking up to `max_block`s."""
+    handle = _wr.get_handle(wait_id)
+    if handle is None:
+        raise ValueError(f"Unknown wait_id {wait_id!r}")
+    if max_block > 0 and not handle.terminated and not handle.timed_out:
+        try:
+            await asyncio.wait_for(handle.done_event.wait(), max_block)
+        except asyncio.TimeoutError:
+            pass
+    return handle.snapshot()
+
+
+@_op(incus_read)
+async def operation_wait_cancel(
+    wait_id: Annotated[
+        str,
+        Field(description="Wait handle ID. Cancels the local polling task; the Incus operation itself is unaffected. Use CancelOperation (incus_delete) to cancel the operation on the server."),
+    ],
+) -> dict:
+    """Cancel the local polling task for a wait handle. Idempotent.
+
+    Cancelling the wait does NOT cancel the target operation; use
+    CancelOperation (incus_delete) to cancel the operation server-side.
+    Cancelling also does NOT run pending-verify; the entry stays until TTL.
+    """
+    handle = _wr.get_handle(wait_id)
+    if handle is None:
+        raise ValueError(f"Unknown wait_id {wait_id!r}")
+    if handle.task is not None and not handle.task.done():
+        handle.task.cancel()
+    return handle.snapshot()
+
+
+@_op(incus_read)
+async def waits_list() -> list[dict]:
+    """List all in-flight and recently-terminal waits. Reaps expired opportunistically."""
+    _wr.reap_expired()
+    return [h.snapshot() for h in _wr.list_handles()]
 
 
 # ── Warnings ─────────────────────────────────────────────────────────

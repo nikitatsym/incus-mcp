@@ -17,7 +17,7 @@ HELP = server._build_help("incus_read")
 
 
 def test_help_lists_all_grouped_ops():
-    assert "83 operations available" in HELP
+    assert "87 operations available" in HELP  # 83 grouped + 4 waiters (Step 8)
 
 
 def test_no_unset_leak_in_help():
