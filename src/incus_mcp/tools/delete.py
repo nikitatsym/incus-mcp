@@ -1,20 +1,27 @@
 from __future__ import annotations
 
-from ..registry import _op
+from typing import Annotated, cast
+
+from pydantic import Field
+
+from ..registry import _UNSET, _op
 from .groups import incus_delete
-from .helpers import _get_client, _ok
+from .helpers import _PROJECT_DESC, _get_client, _ok, _qp
+
+# No verify wiring: DELETEs send empty body; _verify_response would no-op
+# (plan 7d).
+
+_ProjectAnn = Annotated[str | None, Field(description=_PROJECT_DESC)]
+_UNSET_STR = cast(str | None, _UNSET)
 
 
 # ── Instances ────────────────────────────────────────────────────────
 
 
 @_op(incus_delete)
-def delete_instance(name: str, project: str | None = None):
+def delete_instance(name: str, project: _ProjectAnn = _UNSET_STR):
     """Delete an instance. Irreversible."""
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().delete(f"/1.0/instances/{name}", params=params))
+    return _ok(_get_client().delete(f"/1.0/instances/{name}", params=_qp(project=project)))
 
 
 @_op(incus_delete)
@@ -30,12 +37,12 @@ def delete_backup(name: str, backup: str):
 
 
 @_op(incus_delete)
-def delete_instance_file(name: str, path: str, project: str | None = None):
+def delete_instance_file(name: str, path: str, project: _ProjectAnn = _UNSET_STR):
     """Delete a file from an instance."""
-    params: dict = {"path": path}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().delete(f"/1.0/instances/{name}/files", params=params))
+    return _ok(_get_client().delete(
+        f"/1.0/instances/{name}/files",
+        params=_qp(project=project, path=path),
+    ))
 
 
 @_op(incus_delete)
@@ -57,24 +64,22 @@ def delete_instance_template(name: str):
 
 
 @_op(incus_delete)
-def clear_console(name: str, project: str | None = None):
+def clear_console(name: str, project: _ProjectAnn = _UNSET_STR):
     """Clear instance console log."""
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().delete(f"/1.0/instances/{name}/console", params=params))
+    return _ok(_get_client().delete(
+        f"/1.0/instances/{name}/console", params=_qp(project=project),
+    ))
 
 
 # ── Images ───────────────────────────────────────────────────────────
 
 
 @_op(incus_delete)
-def delete_image(fingerprint: str, project: str | None = None):
+def delete_image(fingerprint: str, project: _ProjectAnn = _UNSET_STR):
     """Delete an image."""
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().delete(f"/1.0/images/{fingerprint}", params=params))
+    return _ok(_get_client().delete(
+        f"/1.0/images/{fingerprint}", params=_qp(project=project),
+    ))
 
 
 @_op(incus_delete)
@@ -87,12 +92,11 @@ def delete_image_alias(name: str):
 
 
 @_op(incus_delete)
-def delete_network(name: str, project: str | None = None):
+def delete_network(name: str, project: _ProjectAnn = _UNSET_STR):
     """Delete a network."""
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().delete(f"/1.0/networks/{name}", params=params))
+    return _ok(_get_client().delete(
+        f"/1.0/networks/{name}", params=_qp(project=project),
+    ))
 
 
 @_op(incus_delete)
@@ -147,39 +151,49 @@ def delete_zone_record(zone: str, name: str):
 
 
 @_op(incus_delete)
-def delete_storage_pool(pool: str, project: str | None = None):
+def delete_storage_pool(pool: str, project: _ProjectAnn = _UNSET_STR):
     """Delete a storage pool."""
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().delete(f"/1.0/storage-pools/{pool}", params=params))
+    return _ok(_get_client().delete(
+        f"/1.0/storage-pools/{pool}", params=_qp(project=project),
+    ))
 
 
 @_op(incus_delete)
-def delete_volume(pool: str, type: str, volume: str, project: str | None = None):
+def delete_volume(
+    pool: str,
+    type: str,
+    volume: str,
+    project: _ProjectAnn = _UNSET_STR,
+):
     """Delete a storage volume."""
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().delete(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", params=params))
+    return _ok(_get_client().delete(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}",
+        params=_qp(project=project),
+    ))
 
 
 @_op(incus_delete)
 def delete_volume_snapshot(pool: str, type: str, volume: str, snapshot: str):
     """Delete a volume snapshot."""
-    return _ok(_get_client().delete(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}"))
+    return _ok(_get_client().delete(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}",
+    ))
 
 
 @_op(incus_delete)
 def delete_volume_backup(pool: str, type: str, volume: str, backup: str):
     """Delete a volume backup."""
-    return _ok(_get_client().delete(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{backup}"))
+    return _ok(_get_client().delete(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{backup}",
+    ))
 
 
 @_op(incus_delete)
 def delete_volume_file(pool: str, type: str, volume: str):
     """Delete volume files."""
-    return _ok(_get_client().delete(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/files"))
+    return _ok(_get_client().delete(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/files",
+    ))
 
 
 @_op(incus_delete)
@@ -204,21 +218,26 @@ def delete_bucket_backup(pool: str, bucket: str, backup: str):
 
 
 @_op(incus_delete)
-def delete_profile(name: str, project: str | None = None):
+def delete_profile(name: str, project: _ProjectAnn = _UNSET_STR):
     """Delete a profile."""
-    params = {}
-    if project:
-        params["project"] = project
-    return _ok(_get_client().delete(f"/1.0/profiles/{name}", params=params))
+    return _ok(_get_client().delete(
+        f"/1.0/profiles/{name}", params=_qp(project=project),
+    ))
 
 
 # ── Projects ─────────────────────────────────────────────────────────
 
 
 @_op(incus_delete)
-def delete_project(name: str, force: bool = False):
+def delete_project(
+    name: str,
+    force: Annotated[
+        bool,
+        Field(description="Also delete every resource belonging to the project (irreversible)."),
+    ] = False,
+):
     """Delete a project."""
-    params = {}
+    params: dict[str, str] = {}
     if force:
         params["force"] = "true"
     return _ok(_get_client().delete(f"/1.0/projects/{name}", params=params))
