@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-from mcp.server.fastmcp import Image
+from typing import Annotated, cast
 
-from ..registry import ROOT, _op
+from mcp.server.fastmcp import Image
+from pydantic import Field
+
+from ..registry import ROOT, _UNSET, _op
 from .groups import incus_read
 from .helpers import (
     SLIM_IMAGE,
@@ -12,11 +15,19 @@ from .helpers import (
     SLIM_PROJECT,
     SLIM_VOLUME,
     _get_client,
-    _ok,
     _qp,
     _slim_list,
     _tail_filter,
 )
+
+_PROJECT_DESC = "Incus project (default project when omitted)."
+_API_FILTER_DESC = (
+    "Incus API filter expression (e.g. 'status eq Running,type eq container')."
+)
+_REGEX_FILTER_DESC = "Regex applied line by line before tail."
+_TAIL_DESC = "Return last N lines (0 = full content)."
+_ALL_PROJECTS_DESC = "List across every project the caller can see."
+_VOLUME_TYPE_DESC = "Filter by volume type (custom, container, image, virtual-machine)."
 
 
 # ── Version ──────────────────────────────────────────────────────────
@@ -53,10 +64,15 @@ def get_resources():
 
 
 @_op(incus_read)
-def get_metrics(tail: int = 0, filter: str | None = None):
-    """Get Prometheus metrics. tail: last N lines (0=full). filter: regex to grep metrics."""
+def get_metrics(
+    tail: Annotated[int, Field(description=_TAIL_DESC)] = 0,
+    filter: Annotated[str | None, Field(description=_REGEX_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
+    """Get Prometheus metrics."""
     text = _get_client().get("/1.0/metrics")
-    return _tail_filter(text, tail, filter)
+    return _tail_filter(text, tail, None if filter is _UNSET else filter)
 
 
 @_op(incus_read)
@@ -69,22 +85,50 @@ def get_metadata_config():
 
 
 @_op(incus_read)
-def list_instances(project: str | None = None, filter: str | None = None, all_projects: bool = False):
+def list_instances(
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+    filter: Annotated[str | None, Field(description=_API_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+    all_projects: Annotated[bool, Field(description=_ALL_PROJECTS_DESC)] = False,
+):
     """List instances (slim: name, status, type, architecture, location, project, created_at)."""
-    data = _get_client().get("/1.0/instances", params=_qp(project=project, filter=filter, all_projects=all_projects, recursion=1))
+    data = _get_client().get(
+        "/1.0/instances",
+        params=_qp(
+            project=project,
+            filter=filter,
+            all_projects=all_projects,
+            recursion=1,
+        ),
+    )
     return _slim_list(data, SLIM_INSTANCE)
 
 
 @_op(incus_read)
-def show_instance(name: str, project: str | None = None):
+def show_instance(
+    name: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get full instance details."""
     return _get_client().get(f"/1.0/instances/{name}", params=_qp(project=project))
 
 
 @_op(incus_read)
-def get_instance_state(name: str, project: str | None = None):
+def get_instance_state(
+    name: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get instance state: CPU, memory, disk, network usage."""
-    return _get_client().get(f"/1.0/instances/{name}/state", params=_qp(project=project))
+    return _get_client().get(
+        f"/1.0/instances/{name}/state", params=_qp(project=project)
+    )
 
 
 @_op(incus_read)
@@ -100,10 +144,17 @@ def list_instance_logs(name: str):
 
 
 @_op(incus_read)
-def get_instance_log(name: str, filename: str, tail: int = 100, filter: str | None = None):
-    """Get a specific instance log file. tail: last N lines (0=full). filter: regex."""
+def get_instance_log(
+    name: str,
+    filename: str,
+    tail: Annotated[int, Field(description=_TAIL_DESC)] = 100,
+    filter: Annotated[str | None, Field(description=_REGEX_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
+    """Get a specific instance log file."""
     text = _get_client().get(f"/1.0/instances/{name}/logs/{filename}")
-    return _tail_filter(text, tail, filter)
+    return _tail_filter(text, tail, None if filter is _UNSET else filter)
 
 
 @_op(incus_read)
@@ -113,36 +164,76 @@ def list_exec_outputs(name: str):
 
 
 @_op(incus_read)
-def get_exec_output(name: str, filename: str, tail: int = 100, filter: str | None = None):
-    """Get a specific exec output file. tail: last N lines (0=full). filter: regex."""
+def get_exec_output(
+    name: str,
+    filename: str,
+    tail: Annotated[int, Field(description=_TAIL_DESC)] = 100,
+    filter: Annotated[str | None, Field(description=_REGEX_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
+    """Get a specific exec output file."""
     text = _get_client().get(f"/1.0/instances/{name}/logs/exec-output/{filename}")
-    return _tail_filter(text, tail, filter)
+    return _tail_filter(text, tail, None if filter is _UNSET else filter)
 
 
 @_op(incus_read)
-def get_console_output(name: str, project: str | None = None, tail: int = 100, filter: str | None = None):
-    """Get instance console output. tail: last N lines (0=full). filter: regex."""
-    text = _get_client().get(f"/1.0/instances/{name}/console", params=_qp(project=project))
-    return _tail_filter(text, tail, filter)
+def get_console_output(
+    name: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+    tail: Annotated[int, Field(description=_TAIL_DESC)] = 100,
+    filter: Annotated[str | None, Field(description=_REGEX_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
+    """Get instance console output."""
+    text = _get_client().get(
+        f"/1.0/instances/{name}/console", params=_qp(project=project)
+    )
+    return _tail_filter(text, tail, None if filter is _UNSET else filter)
 
 
 @_op(incus_read)
-def get_console_screenshot(name: str, project: str | None = None):
+def get_console_screenshot(
+    name: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get a PNG screenshot of the VM's VGA console."""
-    data = _get_client().get_raw(f"/1.0/instances/{name}/console", params=_qp(project=project, type="vga"))
+    data = _get_client().get_raw(
+        f"/1.0/instances/{name}/console", params=_qp(project=project, type="vga")
+    )
     return Image(data=data, format="png")
 
 
 @_op(incus_read)
-def get_instance_file(name: str, path: str, project: str | None = None):
+def get_instance_file(
+    name: str,
+    path: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get a file from an instance."""
-    return _get_client().get(f"/1.0/instances/{name}/files", params=_qp(project=project, path=path))
+    return _get_client().get(
+        f"/1.0/instances/{name}/files", params=_qp(project=project, path=path)
+    )
 
 
 @_op(incus_read)
-def get_instance_metadata(name: str, project: str | None = None):
+def get_instance_metadata(
+    name: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get instance image metadata."""
-    return _get_client().get(f"/1.0/instances/{name}/metadata", params=_qp(project=project))
+    return _get_client().get(
+        f"/1.0/instances/{name}/metadata", params=_qp(project=project)
+    )
 
 
 @_op(incus_read)
@@ -155,9 +246,17 @@ def list_instance_templates(name: str):
 
 
 @_op(incus_read)
-def list_snapshots(name: str, project: str | None = None):
+def list_snapshots(
+    name: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List instance snapshots."""
-    return _get_client().get(f"/1.0/instances/{name}/snapshots", params=_qp(project=project, recursion=1))
+    return _get_client().get(
+        f"/1.0/instances/{name}/snapshots",
+        params=_qp(project=project, recursion=1),
+    )
 
 
 @_op(incus_read)
@@ -185,22 +284,51 @@ def show_backup(name: str, backup: str):
 
 
 @_op(incus_read)
-def list_images(project: str | None = None, filter: str | None = None, all_projects: bool = False):
+def list_images(
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+    filter: Annotated[str | None, Field(description=_API_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+    all_projects: Annotated[bool, Field(description=_ALL_PROJECTS_DESC)] = False,
+):
     """List images (slim: fingerprint, type, architecture, size, created_at, description)."""
-    data = _get_client().get("/1.0/images", params=_qp(project=project, filter=filter, all_projects=all_projects, recursion=1))
+    data = _get_client().get(
+        "/1.0/images",
+        params=_qp(
+            project=project,
+            filter=filter,
+            all_projects=all_projects,
+            recursion=1,
+        ),
+    )
     return _slim_list(data, SLIM_IMAGE)
 
 
 @_op(incus_read)
-def show_image(fingerprint: str, project: str | None = None):
+def show_image(
+    fingerprint: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get full image details."""
-    return _get_client().get(f"/1.0/images/{fingerprint}", params=_qp(project=project))
+    return _get_client().get(
+        f"/1.0/images/{fingerprint}", params=_qp(project=project)
+    )
 
 
 @_op(incus_read)
-def list_image_aliases(project: str | None = None):
+def list_image_aliases(
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List image aliases."""
-    return _get_client().get("/1.0/images/aliases", params=_qp(project=project, recursion=1))
+    return _get_client().get(
+        "/1.0/images/aliases", params=_qp(project=project, recursion=1)
+    )
 
 
 @_op(incus_read)
@@ -213,14 +341,28 @@ def show_image_alias(name: str):
 
 
 @_op(incus_read)
-def list_networks(project: str | None = None, filter: str | None = None):
+def list_networks(
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+    filter: Annotated[str | None, Field(description=_API_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List networks (slim: name, type, managed, status)."""
-    data = _get_client().get("/1.0/networks", params=_qp(project=project, filter=filter, recursion=1))
+    data = _get_client().get(
+        "/1.0/networks", params=_qp(project=project, filter=filter, recursion=1)
+    )
     return _slim_list(data, SLIM_NETWORK)
 
 
 @_op(incus_read)
-def show_network(name: str, project: str | None = None):
+def show_network(
+    name: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get full network details."""
     return _get_client().get(f"/1.0/networks/{name}", params=_qp(project=project))
 
@@ -240,7 +382,9 @@ def get_network_leases(name: str):
 @_op(incus_read)
 def list_network_forwards(network: str):
     """List network address forwards."""
-    return _get_client().get(f"/1.0/networks/{network}/forwards", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/networks/{network}/forwards", params=_qp(recursion=1)
+    )
 
 
 @_op(incus_read)
@@ -252,25 +396,33 @@ def show_network_forward(network: str, listen_address: str):
 @_op(incus_read)
 def list_load_balancers(network: str):
     """List network load balancers."""
-    return _get_client().get(f"/1.0/networks/{network}/load-balancers", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/networks/{network}/load-balancers", params=_qp(recursion=1)
+    )
 
 
 @_op(incus_read)
 def show_load_balancer(network: str, listen_address: str):
     """Get load balancer details."""
-    return _get_client().get(f"/1.0/networks/{network}/load-balancers/{listen_address}")
+    return _get_client().get(
+        f"/1.0/networks/{network}/load-balancers/{listen_address}"
+    )
 
 
 @_op(incus_read)
 def get_load_balancer_state(network: str, listen_address: str):
     """Get load balancer state."""
-    return _get_client().get(f"/1.0/networks/{network}/load-balancers/{listen_address}/state")
+    return _get_client().get(
+        f"/1.0/networks/{network}/load-balancers/{listen_address}/state"
+    )
 
 
 @_op(incus_read)
 def list_network_peers(network: str):
     """List network peers."""
-    return _get_client().get(f"/1.0/networks/{network}/peers", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/networks/{network}/peers", params=_qp(recursion=1)
+    )
 
 
 @_op(incus_read)
@@ -283,9 +435,15 @@ def show_network_peer(network: str, peer: str):
 
 
 @_op(incus_read)
-def list_network_acls(project: str | None = None):
+def list_network_acls(
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List network ACLs."""
-    return _get_client().get("/1.0/network-acls", params=_qp(project=project, recursion=1))
+    return _get_client().get(
+        "/1.0/network-acls", params=_qp(project=project, recursion=1)
+    )
 
 
 @_op(incus_read)
@@ -295,10 +453,16 @@ def show_network_acl(name: str):
 
 
 @_op(incus_read)
-def get_network_acl_log(name: str, tail: int = 100, filter: str | None = None):
-    """Get network ACL log. tail: last N lines (0=full). filter: regex."""
+def get_network_acl_log(
+    name: str,
+    tail: Annotated[int, Field(description=_TAIL_DESC)] = 100,
+    filter: Annotated[str | None, Field(description=_REGEX_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
+    """Get network ACL log."""
     text = _get_client().get(f"/1.0/network-acls/{name}/log")
-    return _tail_filter(text, tail, filter)
+    return _tail_filter(text, tail, None if filter is _UNSET else filter)
 
 
 # ── Network Address Sets ─────────────────────────────────────────────
@@ -358,7 +522,9 @@ def show_network_zone(zone: str):
 @_op(incus_read)
 def list_zone_records(zone: str):
     """List DNS records in a network zone."""
-    return _get_client().get(f"/1.0/network-zones/{zone}/records", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/network-zones/{zone}/records", params=_qp(recursion=1)
+    )
 
 
 @_op(incus_read)
@@ -371,13 +537,24 @@ def show_zone_record(zone: str, name: str):
 
 
 @_op(incus_read)
-def list_storage_pools(project: str | None = None):
+def list_storage_pools(
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List storage pools."""
-    return _get_client().get("/1.0/storage-pools", params=_qp(project=project, recursion=1))
+    return _get_client().get(
+        "/1.0/storage-pools", params=_qp(project=project, recursion=1)
+    )
 
 
 @_op(incus_read)
-def show_storage_pool(pool: str, project: str | None = None):
+def show_storage_pool(
+    pool: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get storage pool details."""
     return _get_client().get(f"/1.0/storage-pools/{pool}", params=_qp(project=project))
 
@@ -392,49 +569,79 @@ def get_pool_resources(pool: str):
 
 
 @_op(incus_read)
-def list_volumes(pool: str, project: str | None = None, type: str | None = None):
+def list_volumes(
+    pool: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+    type: Annotated[str | None, Field(description=_VOLUME_TYPE_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List storage volumes (slim: name, type, content_type, location)."""
     path = f"/1.0/storage-pools/{pool}/volumes"
-    if type:
+    if type is not _UNSET and type:
         path = f"{path}/{type}"
     data = _get_client().get(path, params=_qp(project=project, recursion=1))
     return _slim_list(data, SLIM_VOLUME)
 
 
 @_op(incus_read)
-def show_volume(pool: str, type: str, volume: str, project: str | None = None):
+def show_volume(
+    pool: str,
+    type: str,
+    volume: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get full volume details."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", params=_qp(project=project))
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}",
+        params=_qp(project=project),
+    )
 
 
 @_op(incus_read)
 def get_volume_state(pool: str, type: str, volume: str):
     """Get volume state."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/state")
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/state"
+    )
 
 
 @_op(incus_read)
 def list_volume_snapshots(pool: str, type: str, volume: str):
     """List volume snapshots."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots",
+        params=_qp(recursion=1),
+    )
 
 
 @_op(incus_read)
 def show_volume_snapshot(pool: str, type: str, volume: str, snapshot: str):
     """Get volume snapshot details."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}")
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}"
+    )
 
 
 @_op(incus_read)
 def list_volume_backups(pool: str, type: str, volume: str):
     """List volume backups."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups",
+        params=_qp(recursion=1),
+    )
 
 
 @_op(incus_read)
 def show_volume_backup(pool: str, type: str, volume: str, backup: str):
     """Get volume backup details."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{backup}")
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{backup}"
+    )
 
 
 # ── Storage Buckets ──────────────────────────────────────────────────
@@ -443,7 +650,9 @@ def show_volume_backup(pool: str, type: str, volume: str, backup: str):
 @_op(incus_read)
 def list_buckets(pool: str):
     """List storage buckets."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/buckets", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/buckets", params=_qp(recursion=1)
+    )
 
 
 @_op(incus_read)
@@ -455,39 +664,59 @@ def show_bucket(pool: str, bucket: str):
 @_op(incus_read)
 def list_bucket_keys(pool: str, bucket: str):
     """List storage bucket keys."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys", params=_qp(recursion=1)
+    )
 
 
 @_op(incus_read)
 def show_bucket_key(pool: str, bucket: str, key: str):
     """Get storage bucket key details."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys/{key}")
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys/{key}"
+    )
 
 
 @_op(incus_read)
 def list_bucket_backups(pool: str, bucket: str):
     """List storage bucket backups."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups", params=_qp(recursion=1))
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups",
+        params=_qp(recursion=1),
+    )
 
 
 @_op(incus_read)
 def show_bucket_backup(pool: str, bucket: str, backup: str):
     """Get storage bucket backup details."""
-    return _get_client().get(f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{backup}")
+    return _get_client().get(
+        f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{backup}"
+    )
 
 
 # ── Profiles ─────────────────────────────────────────────────────────
 
 
 @_op(incus_read)
-def list_profiles(project: str | None = None):
+def list_profiles(
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List profiles (slim: name, description)."""
-    data = _get_client().get("/1.0/profiles", params=_qp(project=project, recursion=1))
+    data = _get_client().get(
+        "/1.0/profiles", params=_qp(project=project, recursion=1)
+    )
     return _slim_list(data, SLIM_PROFILE)
 
 
 @_op(incus_read)
-def show_profile(name: str, project: str | None = None):
+def show_profile(
+    name: str,
+    project: Annotated[str | None, Field(description=_PROJECT_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """Get full profile details."""
     return _get_client().get(f"/1.0/profiles/{name}", params=_qp(project=project))
 
@@ -496,9 +725,15 @@ def show_profile(name: str, project: str | None = None):
 
 
 @_op(incus_read)
-def list_projects(filter: str | None = None):
+def list_projects(
+    filter: Annotated[str | None, Field(description=_API_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List projects (slim: name, description)."""
-    data = _get_client().get("/1.0/projects", params=_qp(filter=filter, recursion=1))
+    data = _get_client().get(
+        "/1.0/projects", params=_qp(filter=filter, recursion=1)
+    )
     return _slim_list(data, SLIM_PROJECT)
 
 
@@ -530,9 +765,15 @@ def get_cluster():
 
 
 @_op(incus_read)
-def list_cluster_members(filter: str | None = None):
+def list_cluster_members(
+    filter: Annotated[str | None, Field(description=_API_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List cluster members."""
-    return _get_client().get("/1.0/cluster/members", params=_qp(filter=filter, recursion=1))
+    return _get_client().get(
+        "/1.0/cluster/members", params=_qp(filter=filter, recursion=1)
+    )
 
 
 @_op(incus_read)
@@ -563,9 +804,15 @@ def show_cluster_group(name: str):
 
 
 @_op(incus_read)
-def list_certificates(filter: str | None = None):
+def list_certificates(
+    filter: Annotated[str | None, Field(description=_API_FILTER_DESC)] = cast(
+        str | None, _UNSET
+    ),
+):
     """List trusted certificates."""
-    return _get_client().get("/1.0/certificates", params=_qp(filter=filter, recursion=1))
+    return _get_client().get(
+        "/1.0/certificates", params=_qp(filter=filter, recursion=1)
+    )
 
 
 @_op(incus_read)

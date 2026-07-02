@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from ..client import IncusClient
+from ..registry import _UNSET, _Unset
 
 _client: IncusClient | None = None
 
@@ -64,24 +66,32 @@ def _tail_filter(text: str, tail: int = 100, filter: str | None = None) -> str:
 
 
 def _qp(
-    project: str | None = None,
-    filter: str | None = None,
+    project: str | _Unset | None = None,
+    filter: str | _Unset | None = None,
     all_projects: bool = False,
     recursion: int | None = None,
-    **extra,
-) -> dict:
-    params = {}
-    if project:
-        params["project"] = project
-    if filter:
-        params["filter"] = filter
+    **extra: Any,
+) -> dict[str, str]:
+    """Build a query-param dict; drops `_UNSET`, None, and empty strings.
+
+    `all_projects=True` renders as `all-projects=true`; `recursion=<int>`
+    always renders (0 is meaningful); everything else `str(v)`-coerces.
+    Named params are typed for mypy; `**extra` carries op-specific keys
+    like `type=` (screenshot) or `path=` (file fetch).
+    """
+    params: dict[str, str] = {}
+    if project is not _UNSET and project is not None and project != "":
+        params["project"] = str(project)
+    if filter is not _UNSET and filter is not None and filter != "":
+        params["filter"] = str(filter)
     if all_projects:
         params["all-projects"] = "true"
     if recursion is not None:
         params["recursion"] = str(recursion)
     for k, v in extra.items():
-        if v is not None:
-            params[k] = str(v)
+        if v is _UNSET or v is None or v == "":
+            continue
+        params[k] = str(v)
     return params
 
 
