@@ -9,6 +9,34 @@ class Group:
 ROOT = Group("root", "")
 
 
+class _Unset:
+    """Sentinel singleton: caller did not pass this field.
+
+    Distinct from None. None means "caller explicitly passed null" -
+    Incus PUT/PATCH endpoints accept null on some nullable body fields
+    (description, config, devices, profiles) as a clearing operation.
+    Optional body params declared with default _UNSET carry the
+    omitted-vs-cleared distinction through Pydantic validation
+    (exclude_unset=True) and on to the wire.
+    """
+
+    _instance: "_Unset | None" = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __repr__(self) -> str:
+        return "_UNSET"
+
+    def __bool__(self) -> bool:
+        return False
+
+
+_UNSET = _Unset()
+
+
 def _op(group: Group):
     def decorator(fn):
         if not fn.__doc__:

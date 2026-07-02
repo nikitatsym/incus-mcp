@@ -22,4 +22,11 @@ incus-mcp = "incus_mcp:main"
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "pytest-asyncio>=0.24",
+    "respx>=0.21",
 ]
+
+[tool.pytest.ini_options]
+markers = ["integration: requires a real Incus server"]
+addopts = "-m 'not integration'"
+asyncio_mode = "auto"

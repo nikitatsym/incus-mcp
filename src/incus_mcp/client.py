@@ -17,6 +17,15 @@ class APIError(Exception):
 
 
 class IncusClient:
+    @classmethod
+    def _for_tests(cls, http: httpx.Client) -> "IncusClient":
+        """Bypass __init__ for tests: no auth, no cert files, no OIDC discovery."""
+        self = cls.__new__(cls)
+        self._http = http
+        self._auth_mode = "tls"
+        self._access_token = None
+        return self
+
     def __init__(self):
         s = get_settings()
         if not s.incus_url:
