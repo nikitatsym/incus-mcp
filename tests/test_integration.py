@@ -86,7 +86,13 @@ async def test_silent_drop_verify_async():
     try:
         start = await read.operation_wait_start(op["id"], timeout=180)
         snap = await read.operation_wait_poll(start["wait_id"], max_block=150)
-        assert snap.get("verify_error") is not None
-        assert "nonsense.namespace.key" in snap["verify_error"]
+        # No phantom success: real Incus either fails the operation outright
+        # (terminal status_code >= 400) or accepts it and silently drops the
+        # bogus key (surfaced post-terminal as verify_error). Both are loud;
+        # Incus 6.0 rejects an unknown config namespace with a 400.
+        failed = bool(snap.get("terminated")) and (snap.get("status_code") or 0) >= 400
+        assert failed or snap.get("verify_error") is not None, snap
+        if snap.get("verify_error") is not None:
+            assert "nonsense.namespace.key" in snap["verify_error"]
     finally:
         _cleanup(name)

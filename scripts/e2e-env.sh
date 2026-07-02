@@ -23,22 +23,34 @@ if ! command -v incus >/dev/null 2>&1; then
     apt-get install -y incus
 fi
 
-# 2. Storage pool + daemon defaults.
-if [ -z "$(incus storage list -f csv 2>/dev/null)" ]; then
-    incus admin init --minimal
+# 2. Storage pool. `admin init --minimal` is avoided throughout: its
+# auto-subnet step fails inside nested VMs (lima/vz) and aborts init half-done,
+# leaving no network and an empty default profile. Each piece below is
+# provisioned explicitly and idempotently instead.
+if ! incus storage list -f csv 2>/dev/null | grep -q "^default,"; then
+    incus storage create default dir
 fi
 
 # 3. HTTPS listener (idempotent: setting the same value is a no-op).
 incus config set core.https_address 127.0.0.1:8443
 
-# 4. Managed network - the sync silent-drop smoke needs one to target.
+# 4. Managed network + default-profile devices. The sync silent-drop smoke
+# needs a managed network to target; container creation needs a root disk on
+# the default profile (the nic gives the container connectivity). Explicit
+# subnet - auto-detection is unreliable in nested VMs.
 if ! incus network list -f csv 2>/dev/null | awk -F, '$3=="YES"{f=1} END{exit !f}'; then
-    incus network create incusbr0
+    incus network create incusbr0 ipv4.address=10.201.202.1/24 ipv4.nat=true ipv6.address=none
+fi
+if ! incus profile device list default 2>/dev/null | grep -qx root; then
+    incus profile device add default root disk pool=default path=/
+fi
+if ! incus profile device list default 2>/dev/null | grep -qx eth0; then
+    incus profile device add default eth0 nic network=incusbr0 name=eth0
 fi
 
 # 5. Pre-pull the smoke image and pin the alias the tests use.
 if ! incus image alias list -f csv 2>/dev/null | grep -q "^${ALIAS},"; then
-    incus image copy images:alpine/3.20 local: --alias "$ALIAS"
+    incus image copy images:alpine/3.21 local: --alias "$ALIAS"
 fi
 
 # 6. Client cert + trust.
