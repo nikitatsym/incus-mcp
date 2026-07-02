@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, Literal, cast
+from typing import Annotated, Any, Literal, cast
 
 from pydantic import Field
 
@@ -20,7 +20,7 @@ from .helpers import (
 
 _ProjectAnn = Annotated[str | None, Field(description=_PROJECT_DESC)]
 _UNSET_STR = cast(str | None, _UNSET)
-_UNSET_DICT = cast(dict | None, _UNSET)
+_UNSET_DICT = cast("dict[str, Any] | None", _UNSET)
 _UNSET_INT = cast(int | None, _UNSET)
 
 
@@ -28,9 +28,9 @@ _UNSET_INT = cast(int | None, _UNSET)
 
 
 @_op(incus_execute)
-def start_instance(name: str, project: _ProjectAnn = _UNSET_STR):
+def start_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any]:
     """Start an instance. Returns an async operation."""
-    body: dict = {"action": "start"}
+    body: dict[str, Any] = {"action": "start"}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
@@ -43,9 +43,9 @@ def stop_instance(
     name: str,
     project: _ProjectAnn = _UNSET_STR,
     force: Annotated[bool, Field(description=_FORCE_DESC)] = False,
-):
+) -> dict[str, Any]:
     """Stop an instance. Returns an async operation."""
-    body: dict = {"action": "stop", "force": force}
+    body: dict[str, Any] = {"action": "stop", "force": force}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
@@ -58,9 +58,9 @@ def restart_instance(
     name: str,
     project: _ProjectAnn = _UNSET_STR,
     force: Annotated[bool, Field(description=_FORCE_DESC)] = False,
-):
+) -> dict[str, Any]:
     """Restart an instance. Returns an async operation."""
-    body: dict = {"action": "restart", "force": force}
+    body: dict[str, Any] = {"action": "restart", "force": force}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
@@ -69,9 +69,9 @@ def restart_instance(
 
 
 @_op(incus_execute)
-def freeze_instance(name: str, project: _ProjectAnn = _UNSET_STR):
+def freeze_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any]:
     """Freeze an instance (pause all processes). Returns an async operation."""
-    body: dict = {"action": "freeze"}
+    body: dict[str, Any] = {"action": "freeze"}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
@@ -80,9 +80,9 @@ def freeze_instance(name: str, project: _ProjectAnn = _UNSET_STR):
 
 
 @_op(incus_execute)
-def unfreeze_instance(name: str, project: _ProjectAnn = _UNSET_STR):
+def unfreeze_instance(name: str, project: _ProjectAnn = _UNSET_STR) -> dict[str, Any]:
     """Unfreeze an instance (resume all processes). Returns an async operation."""
-    body: dict = {"action": "unfreeze"}
+    body: dict[str, Any] = {"action": "unfreeze"}
     result = _get_client().put(
         f"/1.0/instances/{name}/state", json=body, params=_qp(project=project),
     )
@@ -97,9 +97,9 @@ def bulk_instance_state(
         Field(description="Bulk-apply the action to every instance in the project."),
     ],
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Bulk start / stop / restart every instance in the project. Async."""
-    body: dict = {"action": action}
+    body: dict[str, Any] = {"action": action}
     result = _get_client().put(
         "/1.0/instances", json=body, params=_qp(project=project),
     )
@@ -124,13 +124,13 @@ def exec_instance(
         ),
     ],
     project: _ProjectAnn = _UNSET_STR,
-    environment: Annotated[dict | None, Field(description="Extra env vars for the command.")] = _UNSET_DICT,
+    environment: Annotated[dict[str, Any] | None, Field(description="Extra env vars for the command.")] = _UNSET_DICT,
     cwd: Annotated[str | None, Field(description="Working directory inside the instance.")] = _UNSET_STR,
     user: Annotated[int | None, Field(description="UID to run as (default is the instance's root user).")] = _UNSET_INT,
     group: Annotated[int | None, Field(description="GID to run as.")] = _UNSET_INT,
-):
+) -> dict[str, Any]:
     """Execute a command in an instance. Returns the operation ID immediately."""
-    body: dict = {
+    body: dict[str, Any] = {
         "command": command,
         "wait-for-websocket": False,
         "record-output": True,
@@ -148,16 +148,16 @@ def exec_instance(
         f"/1.0/instances/{name}/exec", json=body, params=_qp(project=project),
     )
     _verify_response(body, result)
-    return result
+    return cast("dict[str, Any]", result)
 
 
 # ── Cluster Member State ─────────────────────────────────────────────
 
 
 @_op(incus_execute)
-def evacuate_cluster_member(name: str):
+def evacuate_cluster_member(name: str) -> dict[str, Any]:
     """Evacuate a cluster member (migrate all instances away). Async."""
-    body: dict = {"action": "evacuate"}
+    body: dict[str, Any] = {"action": "evacuate"}
     result = _get_client().post(
         f"/1.0/cluster/members/{name}/state", json=body,
     )
@@ -166,9 +166,9 @@ def evacuate_cluster_member(name: str):
 
 
 @_op(incus_execute)
-def restore_cluster_member(name: str):
+def restore_cluster_member(name: str) -> dict[str, Any]:
     """Restore a cluster member (migrate instances back). Async."""
-    body: dict = {"action": "restore"}
+    body: dict[str, Any] = {"action": "restore"}
     result = _get_client().post(
         f"/1.0/cluster/members/{name}/state", json=body,
     )

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 
 from pydantic import Field
 
@@ -30,14 +30,14 @@ from .helpers import (
 _ProjectAnn = Annotated[str | None, Field(description=_PROJECT_DESC)]
 _DescriptionAnn = Annotated[str | None, Field(description=_DESCRIPTION_DESC)]
 _TargetAnn = Annotated[str | None, Field(description=_TARGET_DESC)]
-_ConfigAnn = Annotated[dict | None, Field(description=_CONFIG_DESC)]
-_DevicesAnn = Annotated[dict | None, Field(description=_DEVICES_DESC)]
+_ConfigAnn = Annotated[dict[str, Any] | None, Field(description=_CONFIG_DESC)]
+_DevicesAnn = Annotated[dict[str, Any] | None, Field(description=_DEVICES_DESC)]
 _ProfilesAnn = Annotated[list[str] | None, Field(description=_PROFILES_DESC)]
 
 _UNSET_STR = cast(str | None, _UNSET)
-_UNSET_DICT = cast(dict | None, _UNSET)
+_UNSET_DICT = cast("dict[str, Any] | None", _UNSET)
 _UNSET_LIST_STR = cast(list[str] | None, _UNSET)
-_UNSET_LIST_DICT = cast(list[dict] | None, _UNSET)
+_UNSET_LIST_DICT = cast(list[dict[str, Any]] | None, _UNSET)
 _UNSET_BOOL = cast(bool | None, _UNSET)
 _UNSET_INT = cast(int | None, _UNSET)
 
@@ -48,7 +48,7 @@ _UNSET_INT = cast(int | None, _UNSET)
 @_op(incus_write)
 def create_instance(
     name: str,
-    source: Annotated[dict, Field(description=_SOURCE_INSTANCE_DESC)],
+    source: Annotated[dict[str, Any], Field(description=_SOURCE_INSTANCE_DESC)],
     type: Annotated[
         str,
         Field(description="'container' (LXC) or 'virtual-machine' (VM)."),
@@ -59,9 +59,9 @@ def create_instance(
     devices: _DevicesAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
     target: _TargetAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a new instance. Returns an async operation."""
-    body: dict = {"name": name, "source": source, "type": type}
+    body: dict[str, Any] = {"name": name, "source": source, "type": type}
     if profiles is not _UNSET:
         body["profiles"] = profiles
     if config is not _UNSET:
@@ -85,9 +85,9 @@ def update_instance(
     profiles: _ProfilesAnn = _UNSET_LIST_STR,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update instance configuration (full replace). Use PatchInstance for partial update."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if devices is not _UNSET:
@@ -111,9 +111,9 @@ def patch_instance(
     profiles: _ProfilesAnn = _UNSET_LIST_STR,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Partially update instance configuration (merge-style)."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if devices is not _UNSET:
@@ -130,9 +130,9 @@ def patch_instance(
 
 
 @_op(incus_write)
-def rename_instance(name: str, new_name: str):
+def rename_instance(name: str, new_name: str) -> dict[str, Any]:
     """Rename an instance (also used for move/migrate). Async."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/instances/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/instances/{new_name}", {})
@@ -142,12 +142,11 @@ def rename_instance(name: str, new_name: str):
 @_op(incus_write)
 def update_instance_metadata(
     name: str,
-    metadata: Annotated[
-        dict,
+    metadata: Annotated[dict[str, Any],
         Field(description="Instance image metadata dict (architecture, creation_date, properties, ...)."),
     ],
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update instance image metadata."""
     result = _get_client().put(
         f"/1.0/instances/{name}/metadata", json=metadata, params=_qp(project=project),
@@ -178,7 +177,7 @@ def upload_instance_file(
         str | None,
         Field(description="'file' or 'directory' (X-Incus-type header)."),
     ] = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Upload a file to an instance. Verify skipped: body is raw content, not JSON."""
     headers: dict[str, str] = {}
     if uid is not _UNSET and uid is not None:
@@ -200,11 +199,10 @@ def upload_instance_file(
 @_op(incus_write)
 def create_instance_template(
     name: str,
-    template: Annotated[
-        dict,
+    template: Annotated[dict[str, Any],
         Field(description="Template spec (see Incus API for schema)."),
     ],
-):
+) -> dict[str, Any]:
     """Create an instance file template."""
     result = _get_client().post(
         f"/1.0/instances/{name}/metadata/templates", json=template,
@@ -216,11 +214,11 @@ def create_instance_template(
 @_op(incus_write)
 def rebuild_instance(
     name: str,
-    source: Annotated[dict, Field(description=_SOURCE_INSTANCE_DESC)],
+    source: Annotated[dict[str, Any], Field(description=_SOURCE_INSTANCE_DESC)],
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Rebuild an instance from a new image source. Async."""
-    body: dict = {"source": source}
+    body: dict[str, Any] = {"source": source}
     qp = _qp(project=project)
     result = _get_client().post(
         f"/1.0/instances/{name}/rebuild", json=body, params=qp,
@@ -239,9 +237,9 @@ def create_snapshot(
     snapshot_name: str,
     stateful: Annotated[bool, Field(description=_STATEFUL_DESC)] = False,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create an instance snapshot. Async."""
-    body: dict = {"name": snapshot_name, "stateful": stateful}
+    body: dict[str, Any] = {"name": snapshot_name, "stateful": stateful}
     qp = _qp(project=project)
     result = _get_client().post(
         f"/1.0/instances/{name}/snapshots", json=body, params=qp,
@@ -261,9 +259,9 @@ def update_snapshot(
         str | None,
         Field(description="Expiration timestamp (RFC3339, e.g. '2026-12-31T00:00:00Z')."),
     ] = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update instance snapshot properties."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if expires_at is not _UNSET:
         body["expires_at"] = expires_at
     result = _get_client().put(
@@ -274,9 +272,9 @@ def update_snapshot(
 
 
 @_op(incus_write)
-def rename_snapshot(name: str, snapshot: str, new_name: str):
+def rename_snapshot(name: str, snapshot: str, new_name: str) -> dict[str, Any]:
     """Rename an instance snapshot. Async."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/instances/{name}/snapshots/{snapshot}", json=body,
     )
@@ -308,9 +306,9 @@ def create_backup(
         bool,
         Field(description="Use storage-driver-specific format (re-importable only to same driver)."),
     ] = False,
-):
+) -> dict[str, Any]:
     """Create an instance backup. Async. Register skipped when backup_name auto-generated."""
-    body: dict = {
+    body: dict[str, Any] = {
         "instance_only": instance_only,
         "optimized_storage": optimized_storage,
     }
@@ -324,9 +322,9 @@ def create_backup(
 
 
 @_op(incus_write)
-def rename_backup(name: str, backup: str, new_name: str):
+def rename_backup(name: str, backup: str, new_name: str) -> dict[str, Any]:
     """Rename an instance backup. Async."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/instances/{name}/backups/{backup}", json=body,
     )
@@ -342,19 +340,18 @@ def rename_backup(name: str, backup: str, new_name: str):
 
 @_op(incus_write)
 def create_image(
-    source: Annotated[dict, Field(description=_SOURCE_IMAGE_DESC)],
+    source: Annotated[dict[str, Any], Field(description=_SOURCE_IMAGE_DESC)],
     public: Annotated[bool, Field(description="Make the image publicly readable.")] = False,
     auto_update: Annotated[
         bool, Field(description="Auto-refresh the image from its source periodically."),
     ] = False,
-    properties: Annotated[
-        dict | None,
+    properties: Annotated[dict[str, Any] | None,
         Field(description="Image metadata dict (arbitrary key/value)."),
     ] = _UNSET_DICT,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create/import an image. Async. Register skipped: fingerprint unknown pre-wait."""
-    body: dict = {
+    body: dict[str, Any] = {
         "source": source,
         "public": public,
         "auto_update": auto_update,
@@ -369,8 +366,7 @@ def create_image(
 @_op(incus_write)
 def update_image(
     fingerprint: str,
-    properties: Annotated[
-        dict | None,
+    properties: Annotated[dict[str, Any] | None,
         Field(description="Image metadata dict (arbitrary key/value)."),
     ] = _UNSET_DICT,
     public: Annotated[
@@ -380,9 +376,9 @@ def update_image(
         bool | None, Field(description="Auto-refresh the image from its source."),
     ] = _UNSET_BOOL,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update image properties (full replace)."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if properties is not _UNSET:
         body["properties"] = properties
     if public is not _UNSET:
@@ -399,17 +395,16 @@ def update_image(
 @_op(incus_write)
 def patch_image(
     fingerprint: str,
-    properties: Annotated[
-        dict | None,
+    properties: Annotated[dict[str, Any] | None,
         Field(description="Image metadata dict."),
     ] = _UNSET_DICT,
     public: Annotated[
         bool | None, Field(description="Make the image publicly readable."),
     ] = _UNSET_BOOL,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Partially update image properties."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if properties is not _UNSET:
         body["properties"] = properties
     if public is not _UNSET:
@@ -422,7 +417,7 @@ def patch_image(
 
 
 @_op(incus_write)
-def refresh_image(fingerprint: str):
+def refresh_image(fingerprint: str) -> dict[str, Any]:
     """Refresh an image from its source. Async. Register skipped: empty body."""
     return _ok(_get_client().post(f"/1.0/images/{fingerprint}/refresh"))
 
@@ -432,9 +427,9 @@ def create_image_alias(
     name: str,
     target: Annotated[str, Field(description="Image fingerprint the alias points at.")],
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create an image alias."""
-    body: dict = {"name": name, "target": target}
+    body: dict[str, Any] = {"name": name, "target": target}
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/images/aliases", json=body)
@@ -447,9 +442,9 @@ def update_image_alias(
     name: str,
     target: Annotated[str, Field(description="Image fingerprint the alias points at.")],
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update an image alias target."""
-    body: dict = {"target": target}
+    body: dict[str, Any] = {"target": target}
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/images/aliases/{name}", json=body)
@@ -458,9 +453,9 @@ def update_image_alias(
 
 
 @_op(incus_write)
-def rename_image_alias(name: str, new_name: str):
+def rename_image_alias(name: str, new_name: str) -> dict[str, Any]:
     """Rename an image alias."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/images/aliases/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(
@@ -482,9 +477,9 @@ def create_network(
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a network. Async."""
-    body: dict = {"name": name, "type": type}
+    body: dict[str, Any] = {"name": name, "type": type}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -502,9 +497,9 @@ def update_network(
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update network configuration (full replace)."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -522,9 +517,9 @@ def patch_network(
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Partially update network configuration."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -537,9 +532,9 @@ def patch_network(
 
 
 @_op(incus_write)
-def rename_network(name: str, new_name: str):
+def rename_network(name: str, new_name: str) -> dict[str, Any]:
     """Rename a network. Async."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/networks/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/networks/{new_name}", {})
@@ -552,12 +547,12 @@ def create_network_forward(
     listen_address: str,
     config: _ConfigAnn = _UNSET_DICT,
     ports: Annotated[
-        list[dict] | None,
+        list[dict[str, Any]] | None,
         Field(description="Forward port specs (list of {'protocol', 'listen_port', 'target_port', 'target_address'})."),
     ] = _UNSET_LIST_DICT,
-):
+) -> dict[str, Any]:
     """Create a network address forward."""
-    body: dict = {"listen_address": listen_address}
+    body: dict[str, Any] = {"listen_address": listen_address}
     if config is not _UNSET:
         body["config"] = config
     if ports is not _UNSET:
@@ -573,12 +568,12 @@ def update_network_forward(
     listen_address: str,
     config: _ConfigAnn = _UNSET_DICT,
     ports: Annotated[
-        list[dict] | None,
+        list[dict[str, Any]] | None,
         Field(description="Forward port specs."),
     ] = _UNSET_LIST_DICT,
-):
+) -> dict[str, Any]:
     """Update a network address forward."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if ports is not _UNSET:
@@ -596,16 +591,16 @@ def create_load_balancer(
     listen_address: str,
     config: _ConfigAnn = _UNSET_DICT,
     backends: Annotated[
-        list[dict] | None,
+        list[dict[str, Any]] | None,
         Field(description="Backend specs (list of {'name', 'target_address', 'target_port'})."),
     ] = _UNSET_LIST_DICT,
     ports: Annotated[
-        list[dict] | None,
+        list[dict[str, Any]] | None,
         Field(description="LB port specs."),
     ] = _UNSET_LIST_DICT,
-):
+) -> dict[str, Any]:
     """Create a network load balancer."""
-    body: dict = {"listen_address": listen_address}
+    body: dict[str, Any] = {"listen_address": listen_address}
     if config is not _UNSET:
         body["config"] = config
     if backends is not _UNSET:
@@ -625,14 +620,14 @@ def update_load_balancer(
     listen_address: str,
     config: _ConfigAnn = _UNSET_DICT,
     backends: Annotated[
-        list[dict] | None, Field(description="Backend specs."),
+        list[dict[str, Any]] | None, Field(description="Backend specs."),
     ] = _UNSET_LIST_DICT,
     ports: Annotated[
-        list[dict] | None, Field(description="LB port specs."),
+        list[dict[str, Any]] | None, Field(description="LB port specs."),
     ] = _UNSET_LIST_DICT,
-):
+) -> dict[str, Any]:
     """Update a network load balancer."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if backends is not _UNSET:
@@ -658,9 +653,9 @@ def create_network_peer(
         Field(description="Target project (defaults to caller's project)."),
     ] = _UNSET_STR,
     config: _ConfigAnn = _UNSET_DICT,
-):
+) -> dict[str, Any]:
     """Create a network peer."""
-    body: dict = {"name": name, "target_network": target_network}
+    body: dict[str, Any] = {"name": name, "target_network": target_network}
     if target_project is not _UNSET:
         body["target_project"] = target_project
     if config is not _UNSET:
@@ -675,9 +670,9 @@ def update_network_peer(
     network: str,
     peer: str,
     config: _ConfigAnn = _UNSET_DICT,
-):
+) -> dict[str, Any]:
     """Update a network peer."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     result = _get_client().put(f"/1.0/networks/{network}/peers/{peer}", json=body)
@@ -692,17 +687,17 @@ def update_network_peer(
 def create_network_acl(
     name: str,
     egress: Annotated[
-        list[dict] | None,
+        list[dict[str, Any]] | None,
         Field(description="Egress rules (each rule: action/destination/protocol/...)."),
     ] = _UNSET_LIST_DICT,
     ingress: Annotated[
-        list[dict] | None, Field(description="Ingress rules (same schema as egress)."),
+        list[dict[str, Any]] | None, Field(description="Ingress rules (same schema as egress)."),
     ] = _UNSET_LIST_DICT,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a network ACL."""
-    body: dict = {"name": name}
+    body: dict[str, Any] = {"name": name}
     if egress is not _UNSET:
         body["egress"] = egress
     if ingress is not _UNSET:
@@ -720,16 +715,16 @@ def create_network_acl(
 def update_network_acl(
     name: str,
     egress: Annotated[
-        list[dict] | None, Field(description="Egress rules."),
+        list[dict[str, Any]] | None, Field(description="Egress rules."),
     ] = _UNSET_LIST_DICT,
     ingress: Annotated[
-        list[dict] | None, Field(description="Ingress rules."),
+        list[dict[str, Any]] | None, Field(description="Ingress rules."),
     ] = _UNSET_LIST_DICT,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a network ACL (full replace)."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if egress is not _UNSET:
         body["egress"] = egress
     if ingress is not _UNSET:
@@ -744,9 +739,9 @@ def update_network_acl(
 
 
 @_op(incus_write)
-def rename_network_acl(name: str, new_name: str):
+def rename_network_acl(name: str, new_name: str) -> dict[str, Any]:
     """Rename a network ACL."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/network-acls/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/network-acls/{new_name}", {})
@@ -764,9 +759,9 @@ def create_network_address_set(
         Field(description="IP addresses or CIDR ranges."),
     ] = _UNSET_LIST_STR,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a network address set."""
-    body: dict = {"name": name}
+    body: dict[str, Any] = {"name": name}
     if addresses is not _UNSET:
         body["addresses"] = addresses
     if description is not _UNSET:
@@ -784,9 +779,9 @@ def update_network_address_set(
         Field(description="IP addresses or CIDR ranges."),
     ] = _UNSET_LIST_STR,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a network address set."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if addresses is not _UNSET:
         body["addresses"] = addresses
     if description is not _UNSET:
@@ -797,9 +792,9 @@ def update_network_address_set(
 
 
 @_op(incus_write)
-def rename_network_address_set(name: str, new_name: str):
+def rename_network_address_set(name: str, new_name: str) -> dict[str, Any]:
     """Rename a network address set."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/network-address-sets/{name}", json=body,
     )
@@ -819,9 +814,9 @@ def create_network_integration(
     type: Annotated[str, Field(description="Integration type (e.g. 'ovn').")],
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a network integration."""
-    body: dict = {"name": name, "type": type}
+    body: dict[str, Any] = {"name": name, "type": type}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -836,9 +831,9 @@ def update_network_integration(
     name: str,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a network integration."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -849,9 +844,9 @@ def update_network_integration(
 
 
 @_op(incus_write)
-def rename_network_integration(name: str, new_name: str):
+def rename_network_integration(name: str, new_name: str) -> dict[str, Any]:
     """Rename a network integration."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/network-integrations/{name}", json=body,
     )
@@ -870,9 +865,9 @@ def create_network_zone(
     name: str,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a network zone (DNS)."""
-    body: dict = {"name": name}
+    body: dict[str, Any] = {"name": name}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -887,9 +882,9 @@ def update_network_zone(
     zone: str,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a network zone."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -904,14 +899,14 @@ def create_zone_record(
     zone: str,
     name: str,
     entries: Annotated[
-        list[dict] | None,
+        list[dict[str, Any]] | None,
         Field(description="DNS record entries (list of {'type': 'A', 'value': '10.0.0.1', ...})."),
     ] = _UNSET_LIST_DICT,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a DNS record in a network zone."""
-    body: dict = {"name": name}
+    body: dict[str, Any] = {"name": name}
     if entries is not _UNSET:
         body["entries"] = entries
     if config is not _UNSET:
@@ -930,13 +925,13 @@ def update_zone_record(
     zone: str,
     name: str,
     entries: Annotated[
-        list[dict] | None, Field(description="DNS record entries."),
+        list[dict[str, Any]] | None, Field(description="DNS record entries."),
     ] = _UNSET_LIST_DICT,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a DNS record in a network zone."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if entries is not _UNSET:
         body["entries"] = entries
     if config is not _UNSET:
@@ -961,9 +956,9 @@ def create_storage_pool(
     ],
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a storage pool."""
-    body: dict = {"name": name, "driver": driver}
+    body: dict[str, Any] = {"name": name, "driver": driver}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -978,9 +973,9 @@ def update_storage_pool(
     pool: str,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update storage pool configuration."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -1007,9 +1002,9 @@ def create_volume(
         Field(description="Volume content type ('filesystem' or 'block')."),
     ] = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a storage volume. Async."""
-    body: dict = {"name": name, "type": type}
+    body: dict[str, Any] = {"name": name, "type": type}
     if config is not _UNSET:
         body["config"] = config
     if content_type is not _UNSET:
@@ -1033,9 +1028,9 @@ def update_volume(
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update storage volume configuration."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -1050,9 +1045,9 @@ def update_volume(
 
 
 @_op(incus_write)
-def rename_volume(pool: str, type: str, volume: str, new_name: str):
+def rename_volume(pool: str, type: str, volume: str, new_name: str) -> dict[str, Any]:
     """Rename/move a storage volume. Async."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", json=body,
     )
@@ -1072,9 +1067,9 @@ def create_volume_snapshot(
     type: str,
     volume: str,
     snapshot_name: str,
-):
+) -> dict[str, Any]:
     """Create a volume snapshot."""
-    body: dict = {"name": snapshot_name}
+    body: dict[str, Any] = {"name": snapshot_name}
     result = _get_client().post(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots",
         json=body,
@@ -1094,9 +1089,9 @@ def update_volume_snapshot(
         Field(description="Expiration timestamp (RFC3339)."),
     ] = _UNSET_STR,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update volume snapshot properties."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if expires_at is not _UNSET:
         body["expires_at"] = expires_at
     if description is not _UNSET:
@@ -1116,9 +1111,9 @@ def rename_volume_snapshot(
     volume: str,
     snapshot: str,
     new_name: str,
-):
+) -> dict[str, Any]:
     """Rename a volume snapshot."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}",
         json=body,
@@ -1153,9 +1148,9 @@ def create_volume_backup(
         bool,
         Field(description="Use storage-driver-specific format."),
     ] = False,
-):
+) -> dict[str, Any]:
     """Create a volume backup. Async. Register skipped when backup_name auto-generated."""
-    body: dict = {"volume_only": volume_only, "optimized_storage": optimized_storage}
+    body: dict[str, Any] = {"volume_only": volume_only, "optimized_storage": optimized_storage}
     if backup_name is not _UNSET and backup_name:
         body["name"] = backup_name
     if compression_algorithm is not _UNSET and compression_algorithm:
@@ -1170,9 +1165,9 @@ def create_volume_backup(
 @_op(incus_write)
 def rename_volume_backup(
     pool: str, type: str, volume: str, backup: str, new_name: str,
-):
+) -> dict[str, Any]:
     """Rename a volume backup."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/backups/{backup}",
         json=body,
@@ -1196,9 +1191,9 @@ def create_bucket(
     name: str,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a storage bucket."""
-    body: dict = {"name": name}
+    body: dict[str, Any] = {"name": name}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -1214,9 +1209,9 @@ def update_bucket(
     bucket: str,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update storage bucket configuration."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -1237,9 +1232,9 @@ def create_bucket_key(
         str, Field(description="Access role ('read-only' or 'admin')."),
     ] = "read-only",
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a storage bucket access key."""
-    body: dict = {"name": name, "role": role}
+    body: dict[str, Any] = {"name": name, "role": role}
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post(
@@ -1258,9 +1253,9 @@ def update_bucket_key(
         str | None, Field(description="Access role ('read-only' or 'admin')."),
     ] = _UNSET_STR,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a storage bucket access key."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if role is not _UNSET:
         body["role"] = role
     if description is not _UNSET:
@@ -1283,9 +1278,9 @@ def create_bucket_backup(
     compression_algorithm: Annotated[
         str | None, Field(description="Compression algorithm (e.g. 'gzip')."),
     ] = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a storage bucket backup."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if backup_name is not _UNSET and backup_name:
         body["name"] = backup_name
     if compression_algorithm is not _UNSET and compression_algorithm:
@@ -1298,9 +1293,9 @@ def create_bucket_backup(
 
 
 @_op(incus_write)
-def rename_bucket_backup(pool: str, bucket: str, backup: str, new_name: str):
+def rename_bucket_backup(pool: str, bucket: str, backup: str, new_name: str) -> dict[str, Any]:
     """Rename a storage bucket backup."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/storage-pools/{pool}/buckets/{bucket}/backups/{backup}",
         json=body,
@@ -1325,9 +1320,9 @@ def create_profile(
     devices: _DevicesAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a profile."""
-    body: dict = {"name": name}
+    body: dict[str, Any] = {"name": name}
     if config is not _UNSET:
         body["config"] = config
     if devices is not _UNSET:
@@ -1348,9 +1343,9 @@ def update_profile(
     devices: _DevicesAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a profile (full replace)."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if devices is not _UNSET:
@@ -1365,9 +1360,9 @@ def update_profile(
 
 
 @_op(incus_write)
-def rename_profile(name: str, new_name: str):
+def rename_profile(name: str, new_name: str) -> dict[str, Any]:
     """Rename a profile."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/profiles/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/profiles/{new_name}", {})
@@ -1382,9 +1377,9 @@ def create_project(
     name: str,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a project."""
-    body: dict = {"name": name}
+    body: dict[str, Any] = {"name": name}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -1399,9 +1394,9 @@ def update_project(
     name: str,
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a project (full replace)."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -1412,9 +1407,9 @@ def update_project(
 
 
 @_op(incus_write)
-def rename_project(name: str, new_name: str):
+def rename_project(name: str, new_name: str) -> dict[str, Any]:
     """Rename a project."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/projects/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/projects/{new_name}", {})
@@ -1435,9 +1430,9 @@ def update_cluster(
     cluster_address: Annotated[
         str | None, Field(description="Cluster network address (host:port)."),
     ] = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update cluster configuration."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if server_name is not _UNSET:
         body["server_name"] = server_name
     if enabled is not _UNSET:
@@ -1458,9 +1453,9 @@ def update_cluster_certificate(
         str,
         Field(description="PEM-encoded cluster private key (write-only; never echoed back)."),
     ],
-):
+) -> dict[str, Any]:
     """Update the cluster certificate. Verify skipped: private key isn't round-tripped."""
-    body: dict = {
+    body: dict[str, Any] = {
         "cluster_certificate": cluster_certificate,
         "cluster_certificate_key": cluster_certificate_key,
     }
@@ -1468,9 +1463,9 @@ def update_cluster_certificate(
 
 
 @_op(incus_write)
-def request_join_token(name: str):
+def request_join_token(name: str) -> dict[str, Any]:
     """Request a cluster join token for a new member."""
-    body: dict = {"server_name": name}
+    body: dict[str, Any] = {"server_name": name}
     result = _get_client().post("/1.0/cluster/members", json=body)
     _verify_response(body, result)
     return _ok(result)
@@ -1485,9 +1480,9 @@ def update_cluster_member(
         list[str] | None,
         Field(description="Cluster group names this member belongs to."),
     ] = _UNSET_LIST_STR,
-):
+) -> dict[str, Any]:
     """Update cluster member configuration."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
@@ -1500,9 +1495,9 @@ def update_cluster_member(
 
 
 @_op(incus_write)
-def rename_cluster_member(name: str, new_name: str):
+def rename_cluster_member(name: str, new_name: str) -> dict[str, Any]:
     """Rename a cluster member."""
-    body: dict = {"server_name": new_name}
+    body: dict[str, Any] = {"server_name": new_name}
     result = _get_client().post(f"/1.0/cluster/members/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/cluster/members/{new_name}", {})
@@ -1517,9 +1512,9 @@ def create_cluster_group(
         Field(description="Cluster member names to include in the group."),
     ] = _UNSET_LIST_STR,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Create a cluster group."""
-    body: dict = {"name": name}
+    body: dict[str, Any] = {"name": name}
     if members is not _UNSET:
         body["members"] = members
     if description is not _UNSET:
@@ -1537,9 +1532,9 @@ def update_cluster_group(
         Field(description="Cluster member names to include."),
     ] = _UNSET_LIST_STR,
     description: _DescriptionAnn = _UNSET_STR,
-):
+) -> dict[str, Any]:
     """Update a cluster group."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if members is not _UNSET:
         body["members"] = members
     if description is not _UNSET:
@@ -1550,9 +1545,9 @@ def update_cluster_group(
 
 
 @_op(incus_write)
-def rename_cluster_group(name: str, new_name: str):
+def rename_cluster_group(name: str, new_name: str) -> dict[str, Any]:
     """Rename a cluster group."""
-    body: dict = {"name": new_name}
+    body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/cluster/groups/{name}", json=body)
     _verify_response(body, result)
     _register_pending_verify(result, body, f"/1.0/cluster/groups/{new_name}", {})
@@ -1579,9 +1574,9 @@ def add_certificate(
         list[str] | None,
         Field(description="Project names this cert is restricted to."),
     ] = _UNSET_LIST_STR,
-):
+) -> dict[str, Any]:
     """Add a trusted certificate."""
-    body: dict = {
+    body: dict[str, Any] = {
         "certificate": certificate,
         "type": type,
         "restricted": restricted,
@@ -1611,9 +1606,9 @@ def update_certificate(
         list[str] | None,
         Field(description="Restricted project names."),
     ] = _UNSET_LIST_STR,
-):
+) -> dict[str, Any]:
     """Update a trusted certificate."""
-    body: dict = {}
+    body: dict[str, Any] = {}
     if certificate is not _UNSET:
         body["certificate"] = certificate
     if name is not _UNSET:

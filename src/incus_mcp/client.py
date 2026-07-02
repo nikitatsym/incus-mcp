@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 import httpx
 
@@ -8,15 +9,27 @@ from .config import get_settings
 
 
 class APIError(Exception):
-    def __init__(self, status: int, method: str, path: str, body):
+    def __init__(self, status: int, method: str, path: str, body: Any) -> None:
         self.status = status
         self.method = method
         self.path = path
         self.body = body
-        super().__init__(f"{method} {path} → {status}: {body}")
+        super().__init__(f"{method} {path} -> {status}: {body}")
 
 
 class IncusClient:
+    _http: httpx.Client
+    _auth_mode: str
+    _access_token: str | None
+    # OIDC-only, set in __init__ when auth_mode == 'oidc'.
+    _oidc_issuer: str
+    _oidc_client_id: str
+    _username: str
+    _password: str
+    _refresh_token: str | None
+    _token_expiry: float
+    _token_endpoint: str | None
+
     @classmethod
     def _for_tests(cls, http: httpx.Client) -> "IncusClient":
         """Bypass __init__ for tests: no auth, no cert files, no OIDC discovery."""
@@ -26,13 +39,17 @@ class IncusClient:
         self._access_token = None
         return self
 
-    def __init__(self):
+    def __init__(self) -> None:
         s = get_settings()
         if not s.incus_url:
             raise ValueError("INCUS_URL is required")
 
-        verify = s.incus_ca_cert if s.incus_ca_cert else s.incus_verify_ssl
-        kwargs: dict = {"base_url": s.incus_url, "verify": verify, "timeout": 30.0}
+        verify: str | bool = s.incus_ca_cert if s.incus_ca_cert else s.incus_verify_ssl
+        kwargs: dict[str, Any] = {
+            "base_url": s.incus_url,
+            "verify": verify,
+            "timeout": 30.0,
+        }
 
         if s.incus_client_cert and s.incus_client_key:
             kwargs["cert"] = (s.incus_client_cert, s.incus_client_key)
@@ -44,10 +61,10 @@ class IncusClient:
             self._oidc_client_id = s.incus_oidc_client_id
             self._username = s.incus_username
             self._password = s.incus_password
-            self._access_token: str | None = None
-            self._refresh_token: str | None = None
-            self._token_expiry: float = 0
-            self._token_endpoint: str | None = None
+            self._access_token = None
+            self._refresh_token = None
+            self._token_expiry = 0.0
+            self._token_endpoint = None
             self._authenticate()
             kwargs["headers"] = {"Authorization": f"Bearer {self._access_token}"}
         else:
@@ -64,8 +81,9 @@ class IncusClient:
         url = self._oidc_issuer.rstrip("/") + "/.well-known/openid-configuration"
         r = httpx.get(url, timeout=10.0)
         r.raise_for_status()
-        self._token_endpoint = r.json()["token_endpoint"]
-        return self._token_endpoint
+        endpoint = str(r.json()["token_endpoint"])
+        self._token_endpoint = endpoint
+        return endpoint
 
     def _authenticate(self) -> None:
         endpoint = self._discover_token_endpoint()
@@ -116,10 +134,10 @@ class IncusClient:
             self._refresh()
             self._http.headers["Authorization"] = f"Bearer {self._access_token}"
 
-    def _handle(self, r: httpx.Response):
+    def _handle(self, r: httpx.Response) -> Any:
         if r.status_code >= 400:
             try:
-                body = r.json()
+                body: Any = r.json()
             except Exception:
                 body = r.text
             raise APIError(r.status_code, r.request.method, str(r.request.url), body)
@@ -128,7 +146,7 @@ class IncusClient:
         ct = r.headers.get("content-type", "")
         if "json" not in ct:
             return r.text
-        data = r.json()
+        data: Any = r.json()
         # Incus wraps responses in envelope
         if isinstance(data, dict) and "metadata" in data:
             if data.get("type") == "error":
@@ -141,11 +159,11 @@ class IncusClient:
             return data["metadata"]
         return data
 
-    def get(self, path: str, **kwargs):
+    def get(self, path: str, **kwargs: Any) -> Any:
         self._ensure_token()
         return self._handle(self._http.get(path, **kwargs))
 
-    def get_raw(self, path: str, **kwargs) -> bytes:
+    def get_raw(self, path: str, **kwargs: Any) -> bytes:
         """GET that returns raw bytes (for binary content like screenshots)."""
         self._ensure_token()
         r = self._http.get(path, **kwargs)
@@ -153,18 +171,18 @@ class IncusClient:
             raise APIError(r.status_code, "GET", path, r.text)
         return r.content
 
-    def post(self, path: str, **kwargs):
+    def post(self, path: str, **kwargs: Any) -> Any:
         self._ensure_token()
         return self._handle(self._http.post(path, **kwargs))
 
-    def put(self, path: str, **kwargs):
+    def put(self, path: str, **kwargs: Any) -> Any:
         self._ensure_token()
         return self._handle(self._http.put(path, **kwargs))
 
-    def patch(self, path: str, **kwargs):
+    def patch(self, path: str, **kwargs: Any) -> Any:
         self._ensure_token()
         return self._handle(self._http.patch(path, **kwargs))
 
-    def delete(self, path: str, **kwargs):
+    def delete(self, path: str, **kwargs: Any) -> Any:
         self._ensure_token()
         return self._handle(self._http.delete(path, **kwargs))

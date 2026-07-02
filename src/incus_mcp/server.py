@@ -6,7 +6,7 @@ import inspect
 import pkgutil
 import types
 import typing
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable, TypeAlias, cast
 
 from mcp.server.fastmcp import FastMCP
 from pydantic import (
@@ -19,11 +19,16 @@ from pydantic import (
 )
 
 from . import tools as _tools_pkg
-from .registry import ROOT, _UNSET, _Unset
+from .registry import ROOT, _UNSET, Group, _Unset
 
 mcp = FastMCP("incus")
 
-_group_ops: dict[str, dict[str, Callable[..., Any]]] = {}
+# `Callable[..., Any]` on the tool-registration surface: every registered op
+# has a distinct static signature, but by the time it reaches the dispatch
+# tables it's the dynamic surface (spec §Static typing).
+OpFn: TypeAlias = Callable[..., Any]
+
+_group_ops: dict[str, dict[str, OpFn]] = {}
 _all_grouped: dict[str, str] = {}
 
 
@@ -32,7 +37,33 @@ def _to_pascal(name: str) -> str:
     return "".join(w.capitalize() for w in name.split("_"))
 
 
-def _build_params_model(fn: Callable[..., Any]) -> type[BaseModel]:
+class _BoolCoercingBase(BaseModel):
+    """Base for generated per-op models: loose str->bool coercion.
+
+    A single validator lives on a real class so `@classmethod` binds
+    correctly under `mypy --strict`. Every generated model inherits it via
+    `__base__` and picks up the loose bool parsing that MCP clients rely on.
+    """
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _coerce_string_bool(cls, v: Any, info: Any) -> Any:
+        if not isinstance(v, str):
+            return v
+        ann = cls.model_fields[info.field_name].annotation
+        if bool not in (ann,) + typing.get_args(ann):
+            return v
+        lower = v.lower()
+        if lower in ("true", "1", "yes"):
+            return True
+        if lower in ("false", "0", "no"):
+            return False
+        return v
+
+    model_config = ConfigDict(extra="forbid")
+
+
+def _build_params_model(fn: OpFn) -> type[BaseModel]:
     """Build a Pydantic model from a function's signature.
 
     - Parameters without a default become required fields.
@@ -63,36 +94,20 @@ def _build_params_model(fn: Callable[..., Any]) -> type[BaseModel]:
         else:
             fields[name] = (ann, param.default)
 
-    @field_validator("*", mode="before")
-    @classmethod
-    def _coerce_string_bool(cls, v: Any, info: Any) -> Any:
-        if not isinstance(v, str):
-            return v
-        ann = cls.model_fields[info.field_name].annotation
-        if bool not in (ann,) + typing.get_args(ann):
-            return v
-        lower = v.lower()
-        if lower in ("true", "1", "yes"):
-            return True
-        if lower in ("false", "0", "no"):
-            return False
-        return v
-
     return create_model(
         f"{_to_pascal(fn.__name__)}Params",
-        __config__=ConfigDict(extra="forbid"),
-        __validators__={"_coerce_string_bool": _coerce_string_bool},
+        __base__=_BoolCoercingBase,
         **fields,
     )
 
 
-def _prepare_op(fn: Callable[..., Any]) -> None:
+def _prepare_op(fn: OpFn) -> None:
     """Cache the params model and parsed docstring on the function."""
-    fn._mcp_params_model = _build_params_model(fn)  # type: ignore[attr-defined]
+    setattr(fn, "_mcp_params_model", _build_params_model(fn))
     doc = inspect.getdoc(fn) or ""
     head, _, body = doc.partition("\n\n")
-    fn._mcp_doc_head = " ".join(head.split())  # type: ignore[attr-defined]
-    fn._mcp_doc_body = body.rstrip()  # type: ignore[attr-defined]
+    setattr(fn, "_mcp_doc_head", " ".join(head.split()))
+    setattr(fn, "_mcp_doc_body", body.rstrip())
 
 
 def _format_validation_error(
@@ -113,7 +128,7 @@ def _format_validation_error(
     return "\n".join(lines)
 
 
-def _coerce_call(fn: Callable[..., Any], params: dict[str, Any]) -> Any:
+def _coerce_call(fn: OpFn, params: dict[str, Any]) -> Any:
     """Validate params via the function's Pydantic model, then call fn.
 
     Field-level type mismatches, missing required fields, and unknown keys
@@ -121,13 +136,15 @@ def _coerce_call(fn: Callable[..., Any], params: dict[str, Any]) -> Any:
     `_UNSET`-defaulted keys never reach fn (`exclude_unset=True`). Async
     functions return their coroutine as-is - `_dispatch` awaits it.
     """
-    model: type[BaseModel] = fn._mcp_params_model  # type: ignore[attr-defined]
+    model: type[BaseModel] = getattr(fn, "_mcp_params_model")
     try:
         validated = model.model_validate(params)
     except ValidationError as e:
         op_name = _to_pascal(fn.__name__)
-        group_name = fn._mcp_group.name  # type: ignore[attr-defined]
-        raise ValueError(_format_validation_error(e, op_name, group_name)) from e
+        group: Group = getattr(fn, "_mcp_group")
+        raise ValueError(
+            _format_validation_error(e, op_name, group.name)
+        ) from e
     return fn(**validated.model_dump(exclude_unset=True))
 
 
@@ -152,11 +169,19 @@ def _type_to_str(hint: Any) -> str:
     if origin is list:
         return f"list[{_type_to_str(args[0])}]" if args else "list"
     if origin is dict:
-        if len(args) == 2:
+        # `dict[str, Any]` is the codebase's opaque-JSON annotation. It's
+        # what mypy-strict needs but the type args carry no information
+        # for the caller - render as `dict`. Explicit K/V types (e.g.
+        # `dict[str, str]`) do render.
+        if len(args) == 2 and not (args[0] is str and args[1] is Any):
             return f"dict[{_type_to_str(args[0])}, {_type_to_str(args[1])}]"
         return "dict"
     if origin is tuple:
-        return f"tuple[{', '.join(_type_to_str(a) for a in args)}]" if args else "tuple"
+        return (
+            f"tuple[{', '.join(_type_to_str(a) for a in args)}]"
+            if args
+            else "tuple"
+        )
     if hasattr(hint, "__name__"):
         return str(hint.__name__)
     return str(hint).replace("typing.", "")
@@ -173,7 +198,7 @@ def _format_param_for_help(name: str, hint: Any, default: Any) -> str:
     return f"{name}: {type_str} = {default!r}"
 
 
-def _render_ops_block(ops: dict[str, Callable[..., Any]]) -> str:
+def _render_ops_block(ops: dict[str, OpFn]) -> str:
     """Per-op signature line with docstring head, body indented four spaces,
     then a `name: description` bullet for every param with a Field
     description."""
@@ -185,10 +210,12 @@ def _render_ops_block(ops: dict[str, Callable[..., Any]]) -> str:
             _format_param_for_help(n, hints.get(n, Any), p.default)
             for n, p in sig.parameters.items()
         ]
-        lines.append(f"  {pascal_name}({', '.join(parts)}) - {fn._mcp_doc_head}")  # type: ignore[attr-defined]
-        for body_line in fn._mcp_doc_body.splitlines():  # type: ignore[attr-defined]
+        head: str = getattr(fn, "_mcp_doc_head")
+        body: str = getattr(fn, "_mcp_doc_body")
+        lines.append(f"  {pascal_name}({', '.join(parts)}) - {head}")
+        for body_line in body.splitlines():
             lines.append(f"    {body_line}" if body_line else "")
-        model: type[BaseModel] = fn._mcp_params_model  # type: ignore[attr-defined]
+        model: type[BaseModel] = getattr(fn, "_mcp_params_model")
         for field_name, field in model.model_fields.items():
             if field.description:
                 lines.append(f"    {field_name}: {field.description}")
@@ -205,13 +232,14 @@ def _build_help(group_name: str, search: str | None = None) -> str:
     """
     ops = _group_ops[group_name]
     header_suffix = (
-        " Call operation='schema', params={'op': 'OpName'} for the full JSON Schema."
+        " Call operation='schema', params={'op': 'OpName'} "
+        "for the full JSON Schema."
     )
 
     if search:
         s = search.lower()
 
-        def _hit(pascal_name: str, fn: Callable[..., Any]) -> bool:
+        def _hit(pascal_name: str, fn: OpFn) -> bool:
             return (
                 s in pascal_name.lower()
                 or s in fn.__name__.lower()
@@ -251,17 +279,20 @@ def _build_help(group_name: str, search: str | None = None) -> str:
     return f"{header}\n{_render_ops_block(ops)}"
 
 
-def _build_schema(group_name: str, op: str | None = None) -> dict[str, Any] | list[str]:
+def _build_schema(
+    group_name: str, op: str | None = None
+) -> dict[str, Any] | list[str]:
     """JSON Schema for one op, or the sorted list of op names when op is None."""
     ops = _group_ops[group_name]
     if op is None:
         return sorted(ops.keys())
     if op not in ops:
         raise ValueError(
-            f"Unknown operation {op!r} in {group_name}. Available: {sorted(ops)}"
+            f"Unknown operation {op!r} in {group_name}. "
+            f"Available: {sorted(ops)}"
         )
     fn = ops[op]
-    model: type[BaseModel] = fn._mcp_params_model  # type: ignore[attr-defined]
+    model: type[BaseModel] = getattr(fn, "_mcp_params_model")
     schema: dict[str, Any] = model.model_json_schema()
     doc = inspect.getdoc(fn) or ""
     if doc:
@@ -269,7 +300,9 @@ def _build_schema(group_name: str, op: str | None = None) -> dict[str, Any] | li
     return schema
 
 
-async def _dispatch(operation: str, group_name: str, params: dict[str, Any]) -> Any:
+async def _dispatch(
+    operation: str, group_name: str, params: dict[str, Any]
+) -> Any:
     """Route help / schema / op-name; fail loud on anything wrong.
 
     Errors propagate as ValueError / APIError - no `{"error": ...}`
@@ -295,12 +328,14 @@ async def _dispatch(operation: str, group_name: str, params: dict[str, Any]) -> 
         )
     result = _coerce_call(fn, params)
     if inspect.iscoroutine(result):
-        result = await result
+        result = await cast("Awaitable[Any]", result)
     return result
 
 
 def _make_tool(group_name: str, group_doc: str) -> Callable[..., Any]:
-    async def tool_fn(operation: str, params: dict[str, Any] | None = None) -> Any:
+    async def tool_fn(
+        operation: str, params: dict[str, Any] | None = None
+    ) -> Any:
         params = params or {}
         return await _dispatch(operation, group_name, params)
 
@@ -312,7 +347,7 @@ def _make_tool(group_name: str, group_doc: str) -> Callable[..., Any]:
 
 def _register_tools() -> None:
     """Discover @_op-decorated functions, build Pydantic models, register MCP tools."""
-    groups: dict[str, tuple[Any, dict[str, Callable[..., Any]]]] = {}
+    groups: dict[str, tuple[Group, dict[str, OpFn]]] = {}
 
     for _importer, modname, _ispkg in pkgutil.walk_packages(
         _tools_pkg.__path__, _tools_pkg.__name__ + "."
@@ -321,7 +356,7 @@ def _register_tools() -> None:
         for attr_name, fn in inspect.getmembers(module, inspect.isfunction):
             if not hasattr(fn, "_mcp_group"):
                 continue
-            group = fn._mcp_group
+            group: Group = getattr(fn, "_mcp_group")
             if group is ROOT:
                 mcp.tool()(fn)
             else:

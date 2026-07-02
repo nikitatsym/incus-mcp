@@ -1,7 +1,12 @@
+from __future__ import annotations
+
+from typing import Any, Callable, TypeVar
+
+
 class Group:
     __slots__ = ("name", "doc")
 
-    def __init__(self, name: str, doc: str):
+    def __init__(self, name: str, doc: str) -> None:
         self.name = name
         self.doc = doc
 
@@ -22,7 +27,7 @@ class _Unset:
 
     _instance: "_Unset | None" = None
 
-    def __new__(cls):
+    def __new__(cls) -> "_Unset":
         if cls._instance is None:
             cls._instance = super().__new__(cls)
         return cls._instance
@@ -34,13 +39,19 @@ class _Unset:
         return False
 
 
-_UNSET = _Unset()
+# `Any` by design: tool signatures declare their public type (e.g. `str |
+# None`) and use `_UNSET` as the default. If `_UNSET` were typed as
+# `_Unset`, every `x is _UNSET` gate would trip `comparison-overlap`.
+_UNSET: Any = _Unset()
 
 
-def _op(group: Group):
-    def decorator(fn):
+F = TypeVar("F", bound=Callable[..., Any])
+
+
+def _op(group: Group) -> Callable[[F], F]:
+    def decorator(fn: F) -> F:
         if not fn.__doc__:
             raise RuntimeError(f"Tool function {fn.__name__!r} has no docstring")
-        fn._mcp_group = group
+        setattr(fn, "_mcp_group", group)
         return fn
     return decorator

@@ -11,6 +11,8 @@ import secrets
 import time
 from typing import Any
 
+from .types import WaitSnapshotDict, WaitTransitionDict
+
 # Incus terminal set: 200 = success, 400 = failure, 401 = cancelled.
 TERMINAL_STATUS_CODES: frozenset[int] = frozenset({200, 400, 401})
 
@@ -42,48 +44,71 @@ class WaitHandle:
         "done_event",
     )
 
+    wait_id: str
+    operation_id: str
+    options: dict[str, float]
+    status: str | None
+    status_code: int | None
+    terminated: bool
+    timed_out: bool
+    polls: int
+    poll_failures: int
+    last_poll_error: str | None
+    started_at: float
+    ended_at: float | None
+    last_payload: Any
+    transitions: list[WaitTransitionDict]
+    err: str | None
+    verify_error: str | None
+    enrichment_error: str | None
+    task: asyncio.Task[None] | None
+    done_event: asyncio.Event
+
     def __init__(
         self,
         wait_id: str,
         operation_id: str,
-        options: dict[str, Any],
-    ):
+        options: dict[str, float],
+    ) -> None:
         self.wait_id = wait_id
         self.operation_id = operation_id
         self.options = options
 
-        self.status: str | None = None
-        self.status_code: int | None = None
-        self.terminated: bool = False
-        self.timed_out: bool = False
-        self.polls: int = 0
-        self.poll_failures: int = 0
-        self.last_poll_error: str | None = None
-        self.started_at: float = time.time()
-        self.ended_at: float | None = None
-        self.last_payload: Any = None
-        self.transitions: list[dict[str, Any]] = []
-        self.err: str | None = None
-        self.verify_error: str | None = None
-        self.enrichment_error: str | None = None
+        self.status = None
+        self.status_code = None
+        self.terminated = False
+        self.timed_out = False
+        self.polls = 0
+        self.poll_failures = 0
+        self.last_poll_error = None
+        self.started_at = time.time()
+        self.ended_at = None
+        self.last_payload = None
+        self.transitions = []
+        self.err = None
+        self.verify_error = None
+        self.enrichment_error = None
 
-        self.task: asyncio.Task | None = None
-        self.done_event: asyncio.Event = asyncio.Event()
+        self.task = None
+        self.done_event = asyncio.Event()
 
     @property
     def elapsed_seconds(self) -> float:
         end = self.ended_at if self.ended_at is not None else time.time()
         return round(end - self.started_at, 2)
 
-    def record_transition(self, new_status: str | None, new_status_code: int | None) -> bool:
+    def record_transition(
+        self, new_status: str | None, new_status_code: int | None
+    ) -> bool:
         if new_status == self.status and new_status_code == self.status_code:
             return False
-        self.transitions.append({
+        transition: WaitTransitionDict = {
             "from": self.status,
             "to": new_status,
             "status_code": new_status_code,
             "elapsed_seconds": round(time.time() - self.started_at, 2),
-        })
+        }
+        self.transitions.append(transition)
         self.status = new_status
         self.status_code = new_status_code
         return True
@@ -105,8 +130,8 @@ class WaitHandle:
         self.ended_at = time.time()
         self.done_event.set()
 
-    def snapshot(self) -> dict[str, Any]:
-        snap: dict[str, Any] = {
+    def snapshot(self) -> WaitSnapshotDict:
+        snap: WaitSnapshotDict = {
             "wait_id": self.wait_id,
             "operation_id": self.operation_id,
             "status": self.status,
@@ -134,7 +159,7 @@ class WaitHandle:
 _registry: dict[str, WaitHandle] = {}
 
 
-def create_handle(operation_id: str, options: dict[str, Any]) -> WaitHandle:
+def create_handle(operation_id: str, options: dict[str, float]) -> WaitHandle:
     wait_id = f"w-{secrets.token_hex(4)}"
     handle = WaitHandle(wait_id, operation_id, options)
     _registry[wait_id] = handle

@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import re
 import time
-from typing import Any
+from typing import Any, cast
 
 from ..client import IncusClient
-from ..registry import _UNSET, _Unset
+from ..registry import _UNSET
 
 _client: IncusClient | None = None
 
 
-# ── Shared Field descriptions (used across read/write/execute/delete) ────
+# Shared Field descriptions (used across read/write/execute/delete)
 
 _PROJECT_DESC = "Incus project (default project when omitted)."
 _API_FILTER_DESC = (
@@ -57,14 +57,14 @@ def _get_client() -> IncusClient:
     return _client
 
 
-def _ok(data=None):
+def _ok(data: Any = None) -> dict[str, Any]:
     if data is None:
         return {"status": "ok"}
-    return data
+    return cast("dict[str, Any]", data)
 
 
-def _slim(item: dict, fields: set[str]) -> dict:
-    out = {}
+def _slim(item: dict[str, Any], fields: frozenset[str]) -> dict[str, Any]:
+    out: dict[str, Any] = {}
     for f in fields:
         if "." in f:
             parts = f.split(".", 1)
@@ -79,23 +79,28 @@ def _slim(item: dict, fields: set[str]) -> dict:
     return out
 
 
-def _slim_list(items, fields: set[str]) -> list[dict]:
+def _slim_list(items: Any, fields: frozenset[str]) -> Any:
     if not isinstance(items, list):
         return items
     return [_slim(i, fields) for i in items]
 
 
-SLIM_INSTANCE = {"name", "status", "type", "architecture", "location", "project", "created_at"}
-SLIM_IMAGE = {"fingerprint", "type", "architecture", "size", "created_at", "properties.description"}
-SLIM_NETWORK = {"name", "type", "managed", "status"}
-SLIM_VOLUME = {"name", "type", "content_type", "location"}
-SLIM_PROFILE = {"name", "description"}
-SLIM_PROJECT = {"name", "description"}
+SLIM_INSTANCE: frozenset[str] = frozenset({
+    "name", "status", "type", "architecture", "location", "project", "created_at",
+})
+SLIM_IMAGE: frozenset[str] = frozenset({
+    "fingerprint", "type", "architecture", "size", "created_at",
+    "properties.description",
+})
+SLIM_NETWORK: frozenset[str] = frozenset({"name", "type", "managed", "status"})
+SLIM_VOLUME: frozenset[str] = frozenset({"name", "type", "content_type", "location"})
+SLIM_PROFILE: frozenset[str] = frozenset({"name", "description"})
+SLIM_PROJECT: frozenset[str] = frozenset({"name", "description"})
 
 
-def _tail_filter(text: str, tail: int = 100, filter: str | None = None) -> str:
+def _tail_filter(text: Any, tail: int = 100, filter: str | None = None) -> str:
     if not isinstance(text, str) or not text:
-        return text
+        return "" if not isinstance(text, str) else text
     lines = text.splitlines()
     if filter:
         pattern = re.compile(filter)
@@ -107,8 +112,8 @@ def _tail_filter(text: str, tail: int = 100, filter: str | None = None) -> str:
 
 
 def _qp(
-    project: str | _Unset | None = None,
-    filter: str | _Unset | None = None,
+    project: Any = None,
+    filter: Any = None,
     all_projects: bool = False,
     recursion: int | None = None,
     **extra: Any,
@@ -140,11 +145,11 @@ def _qp(
 # real config values, not the top-level transport names.
 _SKIP_VERIFY_ROOT: frozenset[str] = frozenset({
     "source", "project", "target", "force", "stateful",
-    "uid", "gid", "mode", "file_type", "content",  # file-upload channels
+    "uid", "gid", "mode", "file_type", "content",
 })
 
 
-def _verify_response(sent: dict, received, path: str = "") -> None:
+def _verify_response(sent: dict[str, Any], received: Any, path: str = "") -> None:
     """Raise if the API silently dropped a key we sent (recursive).
 
     Incus returns unknown-key namespaces as an empty dict without a 4xx.
@@ -175,13 +180,15 @@ def _verify_response(sent: dict, received, path: str = "") -> None:
 # Entries survive across MCP tool calls (write happens now, wait later) but
 # NOT process restart. TTL prevents unbounded growth if wait is never called.
 
-_pending_verify: dict[str, tuple[dict, str, dict[str, str], float]] = {}
+_pending_verify: dict[
+    str, tuple[dict[str, Any], str, dict[str, str], float]
+] = {}
 _PENDING_VERIFY_TTL = 3600.0
 
 
 def _register_pending_verify(
     result: Any,
-    sent: dict,
+    sent: dict[str, Any],
     target_path: str,
     target_query_params: dict[str, str] | None = None,
 ) -> None:
@@ -189,16 +196,21 @@ def _register_pending_verify(
     if not isinstance(result, dict) or result.get("class") != "task":
         return
     op_id = result.get("id")
-    if not op_id:
+    if not op_id or not isinstance(op_id, str):
         return
     now = time.time()
-    stale = [k for k, (_, _, _, ts) in _pending_verify.items() if now - ts > _PENDING_VERIFY_TTL]
+    stale = [
+        k for k, (_, _, _, ts) in _pending_verify.items()
+        if now - ts > _PENDING_VERIFY_TTL
+    ]
     for k in stale:
         _pending_verify.pop(k, None)
     _pending_verify[op_id] = (sent, target_path, dict(target_query_params or {}), now)
 
 
-def _drain_pending_verify(op_id: str) -> tuple[dict, str, dict[str, str]] | None:
+def _drain_pending_verify(
+    op_id: str,
+) -> tuple[dict[str, Any], str, dict[str, str]] | None:
     """Pop and return the entry for `op_id`, or None if absent/already drained."""
     entry = _pending_verify.pop(op_id, None)
     if entry is None:
