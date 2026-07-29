@@ -23,8 +23,10 @@ dev = _load_dev()
 
 
 class _FakeCompleted:
-    def __init__(self, returncode: int) -> None:
+    # stdout is read by the hook-state probe, so the double has to carry it.
+    def __init__(self, returncode: int, stdout: str = "") -> None:
         self.returncode = returncode
+        self.stdout = stdout
 
 
 def test_unknown_command_returns_2(capsys):
