@@ -26,7 +26,7 @@ def run(name: str) -> int:
         print(f"unknown: {name}. available: {list(CMDS) + ['check']}", file=sys.stderr)
         return 2
     for cmd in CMDS[name]:
-        rc = subprocess.run(cmd).returncode
+        rc = subprocess.run(cmd, check=False).returncode
         if rc:
             return rc
     return 0

@@ -11,9 +11,9 @@ import httpx
 import pytest
 import respx
 
-import incus_mcp.tools.helpers as helpers
 from incus_mcp.client import IncusClient
 from incus_mcp.config import _reset_settings
+from incus_mcp.tools import helpers
 
 TEST_BASE_URL = "https://incus.test:8443"
 

@@ -31,7 +31,7 @@ class IncusClient:
     _token_endpoint: str | None
 
     @classmethod
-    def _for_tests(cls, http: httpx.Client) -> "IncusClient":
+    def _for_tests(cls, http: httpx.Client) -> IncusClient:
         """Bypass __init__ for tests: no auth, no cert files, no OIDC discovery."""
         self = cls.__new__(cls)
         self._http = http
@@ -138,7 +138,9 @@ class IncusClient:
         if r.status_code >= 400:
             try:
                 body: Any = r.json()
-            except Exception:
+            # r.json() decodes bytes, so a latin-1 or truncated error page
+            # raises UnicodeDecodeError, not JSONDecodeError.
+            except Exception:  # noqa: BLE001 - any error body degrades to r.text
                 body = r.text
             raise APIError(r.status_code, r.request.method, str(r.request.url), body)
         if r.status_code == 204 or not r.content:

@@ -12,7 +12,6 @@ from typing import Any, TypedDict
 
 from typing_extensions import NotRequired
 
-
 # ── Async operation object (any /1.0/operations/... response) ──────────
 
 

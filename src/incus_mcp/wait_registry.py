@@ -23,25 +23,25 @@ class WaitHandle:
     """One long-running wait bound to an Incus operation."""
 
     __slots__ = (
-        "wait_id",
+        "done_event",
+        "ended_at",
+        "enrichment_error",
+        "err",
+        "last_payload",
+        "last_poll_error",
         "operation_id",
         "options",
+        "poll_failures",
+        "polls",
+        "started_at",
         "status",
         "status_code",
+        "task",
         "terminated",
         "timed_out",
-        "polls",
-        "poll_failures",
-        "last_poll_error",
-        "started_at",
-        "ended_at",
-        "last_payload",
         "transitions",
-        "err",
         "verify_error",
-        "enrichment_error",
-        "task",
-        "done_event",
+        "wait_id",
     )
 
     wait_id: str

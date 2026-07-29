@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import json
 
-import incus_mcp.server as server
-
+from incus_mcp import server
 
 HELP = server._build_help("incus_write")
 

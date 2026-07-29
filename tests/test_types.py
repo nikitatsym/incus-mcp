@@ -10,7 +10,7 @@ the accepted domain.
 
 from __future__ import annotations
 
-import incus_mcp.server as server
+from incus_mcp import server
 
 
 def test_operation_wait_start_second_durations_are_number():

@@ -7,8 +7,7 @@ land under each op that carries a description.
 
 from __future__ import annotations
 
-import incus_mcp.server as server
-
+from incus_mcp import server
 
 HELP = server._build_help("incus_execute")
 

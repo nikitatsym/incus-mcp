@@ -6,7 +6,8 @@ import inspect
 import pkgutil
 import types
 import typing
-from typing import Any, Awaitable, Callable, TypeAlias, cast
+from collections.abc import Awaitable, Callable
+from typing import Any, cast
 
 from mcp.server.mcpserver import MCPServer
 from pydantic import (
@@ -19,14 +20,9 @@ from pydantic import (
 )
 
 from . import tools as _tools_pkg
-from .registry import ROOT, _UNSET, Group, _Unset
+from .registry import _UNSET, ROOT, Group, OpFn, TaggedFn, _Unset
 
 mcp = MCPServer("incus")
-
-# `Callable[..., Any]` on the tool-registration surface: every registered op
-# has a distinct static signature, but by the time it reaches the dispatch
-# tables it's the dynamic surface (spec §Static typing).
-OpFn: TypeAlias = Callable[..., Any]
 
 _group_ops: dict[str, dict[str, OpFn]] = {}
 _all_grouped: dict[str, str] = {}
@@ -63,7 +59,7 @@ class _BoolCoercingBase(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-def _build_params_model(fn: OpFn) -> type[BaseModel]:
+def _build_params_model(fn: TaggedFn) -> type[BaseModel]:
     """Build a Pydantic model from a function's signature.
 
     - Parameters without a default become required fields.
@@ -101,13 +97,15 @@ def _build_params_model(fn: OpFn) -> type[BaseModel]:
     )
 
 
-def _prepare_op(fn: OpFn) -> None:
+def _prepare_op(tagged: TaggedFn) -> OpFn:
     """Cache the params model and parsed docstring on the function."""
-    setattr(fn, "_mcp_params_model", _build_params_model(fn))
-    doc = inspect.getdoc(fn) or ""
+    fn = cast(OpFn, tagged)  # made true by the writes below
+    fn._mcp_params_model = _build_params_model(tagged)
+    doc = inspect.getdoc(tagged) or ""
     head, _, body = doc.partition("\n\n")
-    setattr(fn, "_mcp_doc_head", " ".join(head.split()))
-    setattr(fn, "_mcp_doc_body", body.rstrip())
+    fn._mcp_doc_head = " ".join(head.split())
+    fn._mcp_doc_body = body.rstrip()
+    return fn
 
 
 def _format_validation_error(
@@ -136,12 +134,12 @@ def _coerce_call(fn: OpFn, params: dict[str, Any]) -> Any:
     `_UNSET`-defaulted keys never reach fn (`exclude_unset=True`). Async
     functions return their coroutine as-is - `_dispatch` awaits it.
     """
-    model: type[BaseModel] = getattr(fn, "_mcp_params_model")
+    model: type[BaseModel] = fn._mcp_params_model
     try:
         validated = model.model_validate(params)
     except ValidationError as e:
         op_name = _to_pascal(fn.__name__)
-        group: Group = getattr(fn, "_mcp_group")
+        group: Group = fn._mcp_group
         raise ValueError(
             _format_validation_error(e, op_name, group.name)
         ) from e
@@ -210,12 +208,12 @@ def _render_ops_block(ops: dict[str, OpFn]) -> str:
             _format_param_for_help(n, hints.get(n, Any), p.default)
             for n, p in sig.parameters.items()
         ]
-        head: str = getattr(fn, "_mcp_doc_head")
-        body: str = getattr(fn, "_mcp_doc_body")
+        head: str = fn._mcp_doc_head
+        body: str = fn._mcp_doc_body
         lines.append(f"  {pascal_name}({', '.join(parts)}) - {head}")
         for body_line in body.splitlines():
             lines.append(f"    {body_line}" if body_line else "")
-        model: type[BaseModel] = getattr(fn, "_mcp_params_model")
+        model: type[BaseModel] = fn._mcp_params_model
         for field_name, field in model.model_fields.items():
             if field.description:
                 lines.append(f"    {field_name}: {field.description}")
@@ -292,7 +290,7 @@ def _build_schema(
             f"Available: {sorted(ops)}"
         )
     fn = ops[op]
-    model: type[BaseModel] = getattr(fn, "_mcp_params_model")
+    model: type[BaseModel] = fn._mcp_params_model
     schema: dict[str, Any] = model.model_json_schema()
     doc = inspect.getdoc(fn) or ""
     if doc:
@@ -353,14 +351,16 @@ def _register_tools() -> None:
         _tools_pkg.__path__, _tools_pkg.__name__ + "."
     ):
         module = __import__(modname, fromlist=[""])
-        for attr_name, fn in inspect.getmembers(module, inspect.isfunction):
-            if not hasattr(fn, "_mcp_group"):
+        for attr_name, raw_fn in inspect.getmembers(module, inspect.isfunction):
+            if not hasattr(raw_fn, "_mcp_group"):
                 continue
-            group: Group = getattr(fn, "_mcp_group")
+            # hasattr just confirmed the @_op-attached attribute exists.
+            tagged = cast(TaggedFn, raw_fn)
+            group: Group = tagged._mcp_group
             if group is ROOT:
-                mcp.tool()(fn)
+                mcp.tool()(raw_fn)
             else:
-                _prepare_op(fn)
+                fn = _prepare_op(tagged)
                 if group.name not in groups:
                     groups[group.name] = (group, {})
                 groups[group.name][1][attr_name] = fn

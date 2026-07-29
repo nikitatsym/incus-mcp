@@ -24,4 +24,4 @@ def test_repr():
 
 def test_distinct_from_none():
     assert _UNSET is not None
-    assert _UNSET != None  # noqa: E711 - identity vs equality is the point
+    assert _UNSET != None

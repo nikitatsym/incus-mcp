@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-import incus_mcp.server as server
-import incus_mcp.tools.helpers as helpers
-from incus_mcp.tools import execute
+from incus_mcp import server
+from incus_mcp.tools import execute, helpers
 
 
 def _async(op_id, extra=None):

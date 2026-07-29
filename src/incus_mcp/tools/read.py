@@ -9,12 +9,12 @@ from pydantic import Field
 
 from .. import wait_registry as _wr
 from ..client import APIError
-from ..registry import ROOT, _UNSET, _op
+from ..registry import _UNSET, ROOT, _op
 from ..types import (
-    OperationDict,
     ImageDict,
     InstanceDict,
     NetworkDict,
+    OperationDict,
     ProfileDict,
     ProjectDict,
     SlimImageDict,
@@ -29,18 +29,18 @@ from ..types import (
 )
 from .groups import incus_read
 from .helpers import (
-    SLIM_IMAGE,
-    SLIM_INSTANCE,
-    SLIM_NETWORK,
-    SLIM_PROFILE,
-    SLIM_PROJECT,
-    SLIM_VOLUME,
     _ALL_PROJECTS_DESC,
     _API_FILTER_DESC,
     _PROJECT_DESC,
     _REGEX_FILTER_DESC,
     _TAIL_DESC,
     _VOLUME_TYPE_DESC,
+    SLIM_IMAGE,
+    SLIM_INSTANCE,
+    SLIM_NETWORK,
+    SLIM_PROFILE,
+    SLIM_PROJECT,
+    SLIM_VOLUME,
     _drain_pending_verify,
     _get_client,
     _qp,
@@ -1089,7 +1089,9 @@ async def _poll(
                 return
             await asyncio.sleep(interval)
             continue
-        except Exception as exc:
+        # This runs in a detached task: an escape here would leave the handle
+        # un-terminated forever, so every failure is recorded and retried.
+        except Exception as exc:  # noqa: BLE001 - nowhere to propagate to
             consecutive_failures += 1
             handle.record_poll_failure(str(exc))
             if consecutive_failures > max_poll_failures:
@@ -1129,7 +1131,8 @@ async def _run_drain(handle: _wr.WaitHandle) -> None:
         _verify_response(sent, target)
     except ValueError as exc:
         handle.verify_error = str(exc)
-    except Exception as exc:
+    # Also detached: enrichment is best-effort and must never sink the wait.
+    except Exception as exc:  # noqa: BLE001 - nowhere to propagate to
         handle.enrichment_error = str(exc)
 
 

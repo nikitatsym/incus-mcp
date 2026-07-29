@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from typing import Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import Any, Protocol, TypeVar, cast
+
+from typing_extensions import Self
 
 
 class Group:
-    __slots__ = ("name", "doc")
+    __slots__ = ("doc", "name")
 
     def __init__(self, name: str, doc: str) -> None:
         self.name = name
@@ -25,12 +28,14 @@ class _Unset:
     (exclude_unset=True) and on to the wire.
     """
 
-    _instance: "_Unset | None" = None
+    _instance: _Unset | None = None
 
-    def __new__(cls) -> "_Unset":
+    def __new__(cls) -> Self:
         if cls._instance is None:
             cls._instance = super().__new__(cls)
-        return cls._instance
+        # _instance is typed _Unset (the base, non-generic slot) - Self here
+        # is always exactly _Unset since nothing subclasses this sentinel.
+        return cast(Self, cls._instance)
 
     def __repr__(self) -> str:
         return "_UNSET"
@@ -45,6 +50,29 @@ class _Unset:
 _UNSET: Any = _Unset()
 
 
+# Dispatch metadata used to be read/written with literal getattr/setattr,
+# which ruff 0.16 bans (B009/B010); plain attribute access needs a static
+# shape instead. It is split in two because ROOT ops are registered straight
+# with mcp.tool() and never pass through server._prepare_op, so they only
+# ever carry the group tag. The single widening cast lives in _prepare_op,
+# which is what makes the fuller shape true.
+class TaggedFn(Protocol):
+    """Tool function after `_op`: carries only the group tag."""
+
+    __name__: str
+    _mcp_group: Group
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any: ...
+
+
+class OpFn(TaggedFn, Protocol):
+    """Grouped tool function after `server._prepare_op`: full dispatch metadata."""
+
+    _mcp_params_model: type[Any]
+    _mcp_doc_head: str
+    _mcp_doc_body: str
+
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 
@@ -52,6 +80,6 @@ def _op(group: Group) -> Callable[[F], F]:
     def decorator(fn: F) -> F:
         if not fn.__doc__:
             raise RuntimeError(f"Tool function {fn.__name__!r} has no docstring")
-        setattr(fn, "_mcp_group", group)
+        cast(TaggedFn, fn)._mcp_group = group
         return fn
     return decorator

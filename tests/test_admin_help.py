@@ -8,9 +8,8 @@ from __future__ import annotations
 
 import pytest
 
-import incus_mcp.server as server
+from incus_mcp import server
 from incus_mcp.tools import admin
-
 
 HELP = server._build_help("incus_admin")
 

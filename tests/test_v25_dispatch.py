@@ -9,7 +9,7 @@ from typing import Annotated, cast
 import pytest
 from pydantic import Field
 
-import incus_mcp.server as server
+from incus_mcp import server
 from incus_mcp.registry import _UNSET, Group
 
 GROUP = "test_group"
