@@ -4,7 +4,7 @@ import asyncio
 import time
 from typing import Annotated, Any, cast
 
-from mcp.server.fastmcp import Image
+from mcp.server.mcpserver import Image
 from pydantic import Field
 
 from .. import wait_registry as _wr
@@ -1037,7 +1037,7 @@ def show_operation(id: str) -> OperationDict:
 def wait_operation(id: str) -> OperationDict:
     """Wait for an operation to complete via Incus's server-side long-poll.
 
-    Blocks the FastMCP event loop until Incus responds. One-shot short waits
+    Blocks the MCPServer event loop until Incus responds. One-shot short waits
     only; prefer OperationWaitStart for slow operations. On terminal success
     (status_code == 200), drains any pending-verify entry for `id` and raises
     ValueError if the target GET reveals a silent-drop of a sent config key.

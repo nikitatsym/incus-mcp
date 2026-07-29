@@ -8,7 +8,7 @@ import types
 import typing
 from typing import Any, Awaitable, Callable, TypeAlias, cast
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.mcpserver import MCPServer
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -21,7 +21,7 @@ from pydantic import (
 from . import tools as _tools_pkg
 from .registry import ROOT, _UNSET, Group, _Unset
 
-mcp = FastMCP("incus")
+mcp = MCPServer("incus")
 
 # `Callable[..., Any]` on the tool-registration surface: every registered op
 # has a distinct static signature, but by the time it reaches the dispatch
