@@ -15,7 +15,9 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v10.0.0
+        with:
+          version: "latest-known"
       - name: Provision Incus
         run: sudo ./scripts/e2e-env.sh
       - name: Run e2e
@@ -31,7 +33,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v10.0.0
+        with:
+          version: "latest-known"
 
       - name: Check
         run: |
