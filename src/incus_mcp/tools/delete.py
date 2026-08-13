@@ -7,7 +7,7 @@ from pydantic import Field
 from ..registry import _UNSET, _op
 from ..types import OperationDict
 from .groups import incus_delete
-from .helpers import _PROJECT_DESC, _get_client, _ok, _qp
+from .helpers import _PROJECT_DESC, _TEMPLATE_NAME_DESC, _get_client, _ok, _qp
 
 # No verify wiring: DELETEs send empty body; _verify_response would no-op
 # (plan 7d).
@@ -59,9 +59,16 @@ def delete_exec_output(name: str, filename: str) -> dict[str, Any]:
 
 
 @_op(incus_delete)
-def delete_instance_template(name: str) -> dict[str, Any]:
-    """Delete instance file templates."""
-    return _ok(_get_client().delete(f"/1.0/instances/{name}/metadata/templates"))
+def delete_instance_template(
+    name: str,
+    template: Annotated[str, Field(description=_TEMPLATE_NAME_DESC)],
+    project: _ProjectAnn = _UNSET_STR,
+) -> dict[str, Any]:
+    """Delete one instance file template."""
+    return _ok(_get_client().delete(
+        f"/1.0/instances/{name}/metadata/templates",
+        params=_qp(project=project, path=template),
+    ))
 
 
 @_op(incus_delete)

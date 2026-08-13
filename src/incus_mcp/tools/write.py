@@ -17,6 +17,7 @@ from .helpers import (
     _SOURCE_INSTANCE_DESC,
     _STATEFUL_DESC,
     _TARGET_DESC,
+    _TEMPLATE_NAME_DESC,
     _get_client,
     _ok,
     _qp,
@@ -71,10 +72,13 @@ def create_instance(
         body["devices"] = devices
     if description is not _UNSET:
         body["description"] = description
-    qp = _qp(project=project, target=target)
-    result = _get_client().post("/1.0/instances", json=body, params=qp)
+    result = _get_client().post(
+        "/1.0/instances", json=body, params=_qp(project=project, target=target),
+    )
     _verify_response(body, result)
-    _register_pending_verify(result, body, f"/1.0/instances/{name}", qp)
+    # `target` only places the instance; instanceGet ignores it, so the
+    # follow-up verify GET is issued without it.
+    _register_pending_verify(result, body, f"/1.0/instances/{name}", _qp(project=project))
     return cast("OperationDict", _ok(result))
 
 
@@ -200,16 +204,23 @@ def upload_instance_file(
 @_op(incus_write)
 def create_instance_template(
     name: str,
-    template: Annotated[dict[str, Any],
-        Field(description="Template spec (see Incus API for schema)."),
+    template: Annotated[str, Field(description=_TEMPLATE_NAME_DESC)],
+    content: Annotated[
+        str,
+        Field(description="Template body as text; sent as the raw request body."),
     ],
+    project: _ProjectAnn = _UNSET_STR,
 ) -> dict[str, Any]:
-    """Create an instance file template."""
-    result = _get_client().post(
-        f"/1.0/instances/{name}/metadata/templates", json=template,
-    )
-    _verify_response(template, result)
-    return _ok(result)
+    """Create or replace an instance file template.
+
+    `content` is the raw template text (pongo2 syntax), sent as the request
+    body. Verify skipped: the body is raw content, not JSON.
+    """
+    return _ok(_get_client().post(
+        f"/1.0/instances/{name}/metadata/templates",
+        params=_qp(project=project, path=template),
+        content=content.encode(),
+    ))
 
 
 @_op(incus_write)

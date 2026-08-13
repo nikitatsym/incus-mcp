@@ -100,7 +100,9 @@ def bulk_instance_state(
     project: _ProjectAnn = _UNSET_STR,
 ) -> OperationDict:
     """Bulk start / stop / restart every instance in the project. Async."""
-    body: dict[str, Any] = {"action": action}
+    # InstancesPut nests the state change under `state`; a flat action decodes
+    # to an empty one and the daemon answers 400 for every instance.
+    body: dict[str, Any] = {"state": {"action": action}}
     result = _get_client().put(
         "/1.0/instances", json=body, params=_qp(project=project),
     )

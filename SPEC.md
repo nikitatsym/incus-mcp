@@ -159,7 +159,7 @@ Total: 87
 | `rename_instance(name, new_name)` | `POST /1.0/instances/{name}` | Also move/migrate |
 | `update_instance_metadata(name, ...)` | `PUT /1.0/instances/{name}/metadata` | |
 | `upload_instance_file(name, path, ...)` | `POST /1.0/instances/{name}/files?path=` | Headers: uid, gid, mode, type |
-| `create_instance_template(name, ...)` | `POST /1.0/instances/{name}/metadata/templates` | |
+| `create_instance_template(name, template, content, project)` | `POST /1.0/instances/{name}/metadata/templates?path=` | Raw body |
 | `rebuild_instance(name, source)` | `POST /1.0/instances/{name}/rebuild` | |
 | **Instance Snapshots** | | |
 | `create_snapshot(name, ...)` | `POST /1.0/instances/{name}/snapshots` | |
@@ -276,7 +276,7 @@ Total: 9
 | `delete_instance_file(name, path, project)` | `DELETE /1.0/instances/{name}/files?path=` | |
 | `delete_instance_log(name, filename)` | `DELETE /1.0/instances/{name}/logs/{filename}` | |
 | `delete_exec_output(name, filename)` | `DELETE /1.0/instances/{name}/logs/exec-output/{filename}` | |
-| `delete_instance_template(name)` | `DELETE /1.0/instances/{name}/metadata/templates` | |
+| `delete_instance_template(name, template, project)` | `DELETE /1.0/instances/{name}/metadata/templates?path=` | |
 | `clear_console(name, project)` | `DELETE /1.0/instances/{name}/console` | |
 | **Images** | | |
 | `delete_image(fingerprint, project)` | `DELETE /1.0/images/{fingerprint}` | |

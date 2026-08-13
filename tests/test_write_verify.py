@@ -134,17 +134,19 @@ def test_list_instances_project_present(stub_client, respx_mock):
 
 
 def test_create_instance_registers_target_and_qp(stub_client, respx_mock):
-    respx_mock.post("/1.0/instances").respond(200, json=_async("op-uuid"))
+    route = respx_mock.post("/1.0/instances").respond(200, json=_async("op-uuid"))
     write.create_instance(
         name="i0",
         source={"type": "none"},
         project="p",
         target="node2",
     )
+    assert "target=node2" in str(route.calls[0].request.url)
     assert "op-uuid" in helpers._pending_verify
     sent, target_path, target_qp, _ = helpers._pending_verify["op-uuid"]
     assert target_path == "/1.0/instances/i0"
-    assert target_qp == {"project": "p", "target": "node2"}
+    # `target` places the instance; GET /1.0/instances/{name} ignores it.
+    assert target_qp == {"project": "p"}
     assert sent["name"] == "i0"
     assert sent["source"] == {"type": "none"}
 

@@ -100,3 +100,11 @@ Integration smoke tests hit a real Incus server and are excluded from the defaul
 - **macOS:** Incus has no macOS daemon, so run the same recipe inside a Linux VM: `limactl start template://ubuntu-lts`, then clone the repo and run the Linux recipe inside the VM. This is the environment CI uses.
 
 CI runs the same smokes in a dedicated `e2e` job (`.github/workflows/build.yml`) that gates the release build.
+
+### Swagger conformance
+
+`tests/test_swagger_conformance.py` reads every registered operation off its own AST and checks method, path, query-param names, body-field names and enum values against Incus's swagger spec - Incus ignores names it does not know, so a typo returns 200 and silently does nothing. It runs in the default gate against the copy of `doc/rest-api.yaml` vendored in `tests/data/`, since no running Incus serves that spec. Re-pin it to a newer Incus with:
+
+```bash
+uv run --with pyyaml python scripts/fetch-incus-spec.py v7.3.0
+```

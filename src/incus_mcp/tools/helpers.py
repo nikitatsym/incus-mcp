@@ -48,6 +48,9 @@ _SOURCE_IMAGE_DESC = (
     "{'type': 'instance', 'name': '...'}, or {'type': 'snapshot', ...}."
 )
 _FORCE_DESC = "Immediate kill instead of graceful shutdown."
+_TEMPLATE_NAME_DESC = (
+    "Template file name, sent as the `path` query param (e.g. 'hostname.tpl')."
+)
 
 
 def _get_client() -> IncusClient:

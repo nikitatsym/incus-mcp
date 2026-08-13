@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from incus_mcp import server
@@ -50,7 +52,6 @@ def test_start_instance_does_not_register_pending_verify(stub_client, respx_mock
 
 
 def test_stop_instance_force_flag_in_body(stub_client, respx_mock):
-    import json
     route = respx_mock.put("/1.0/instances/i0/state").respond(
         200, json=_async("op-stop"),
     )
@@ -65,6 +66,9 @@ def test_bulk_instance_state_project_qp(stub_client, respx_mock):
     )
     execute.bulk_instance_state(action="restart", project="p")
     assert "project=p" in str(route.calls[0].request.url)
+    # InstancesPut nests the action; flattening it makes the daemon 400.
+    body = json.loads(route.calls[0].request.content)
+    assert body == {"state": {"action": "restart"}}
     assert "op-bulk" not in helpers._pending_verify
 
 
@@ -85,7 +89,6 @@ def test_exec_instance_task_response_no_register(stub_client, respx_mock):
 
 
 def test_exec_instance_omit_optional_fields(stub_client, respx_mock):
-    import json
     route = respx_mock.post("/1.0/instances/i0/exec").respond(
         200, json=_async("op-exec-2"),
     )
@@ -100,7 +103,6 @@ def test_exec_instance_omit_optional_fields(stub_client, respx_mock):
 
 
 def test_exec_instance_explicit_env_and_cwd(stub_client, respx_mock):
-    import json
     route = respx_mock.post("/1.0/instances/i0/exec").respond(
         200, json=_async("op-exec-3"),
     )
