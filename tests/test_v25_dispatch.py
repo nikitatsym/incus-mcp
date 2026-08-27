@@ -88,19 +88,19 @@ async def test_schema_without_op_lists_names(tiny_group):
 
 
 async def test_unknown_op_names_available(tiny_group):
-    with pytest.raises(ValueError, match="FirstOp"):
-        await server._dispatch("NoSuchOp", GROUP, {})
+    result = await server._dispatch("NoSuchOp", GROUP, {})
+    assert "FirstOp" in result["error"]
 
 
 async def test_unknown_param_points_at_schema(tiny_group):
-    with pytest.raises(ValueError, match="foo") as exc:
-        await server._dispatch("FirstOp", GROUP, {"name": "x", "foo": "bar"})
-    assert "operation='schema'" in str(exc.value)
+    result = await server._dispatch("FirstOp", GROUP, {"name": "x", "foo": "bar"})
+    assert "foo" in result["error"]
+    assert "operation='schema'" in result["error"]
 
 
 async def test_missing_required_param(tiny_group):
-    with pytest.raises(ValueError, match="name"):
-        await server._dispatch("FirstOp", GROUP, {})
+    result = await server._dispatch("FirstOp", GROUP, {})
+    assert "name" in result["error"]
 
 
 async def test_meta_tool_no_mutable_default_leak(tiny_group):
@@ -117,8 +117,8 @@ async def test_async_op_is_awaited(tiny_group):
 
 
 async def test_wrong_group_hint(tiny_group):
-    with pytest.raises(ValueError, match="incus_read"):
-        await server._dispatch("ListInstances", GROUP, {})
+    result = await server._dispatch("ListInstances", GROUP, {})
+    assert "incus_read" in result["error"]
 
 
 def test_real_registry_help_renders():

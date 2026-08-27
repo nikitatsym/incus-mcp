@@ -67,12 +67,12 @@ Or use the [setup page](https://nikitatsym.github.io/incus-mcp/) to generate the
 
 ## v2.5 features
 
-- **Write verification.** Every verifiable write is checked sent-vs-returned recursively: a silently dropped key (e.g. `config.limits.cpu` accepted then ignored by Incus) raises `ValueError` naming the full path instead of a phantom "201 Created".
+- **Write verification.** Every verifiable write is checked sent-vs-returned recursively: a silently dropped key (e.g. `config.limits.cpu` accepted then ignored by Incus) is reported as an error naming the full path instead of a phantom "201 Created".
 - **`operation='schema'`.** Any group returns a machine-readable JSON Schema for an operation: `params={"op": "CreateInstance"}`.
 - **Richer `help`.** `operation='help'` renders each parameter with its type, `?` for optional, `T | None` for nullable, and a bullet with the parameter's description.
 - **`_UNSET` semantics.** Omitting a parameter differs from passing `null`: omitted params never reach the API; an explicit `null` clears a server-side value on PUT/PATCH.
 - **Non-blocking waiters.** `operation_wait_start` / `operation_wait_poll` / `operation_wait_cancel` (+ `waits_list`) poll a long-running Incus operation in the background instead of blocking the session; `wait_operation` stays for short one-shot waits.
-- **Post-terminal verify on async writes.** When an async write's operation finishes, the target resource is fetched and verified; a drop surfaces as `verify_error` on the wait handle (non-blocking) or raises from `wait_operation` (blocking).
+- **Post-terminal verify on async writes.** When an async write's operation finishes, the target resource is fetched and verified; a drop surfaces as `verify_error` on the wait handle (non-blocking) or as the `wait_operation` error result (blocking).
 
 ## Groups
 

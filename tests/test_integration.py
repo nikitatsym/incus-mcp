@@ -164,17 +164,17 @@ async def test_wait_cancel_live():
 @_needs_server
 async def test_dispatch_rejects_bad_params():
     # The params model rejects unknown params and wrong types up front: a loud
-    # ValueError from the dispatch layer before any request reaches Incus, not a
-    # silent pass-through. No resource is created - validation precedes the POST.
-    with pytest.raises(ValueError):  # unknown param -> extra='forbid'
-        await server._dispatch(
-            "CreateInstance",
-            "incus_write",
-            {"name": "mcp-smoke-bad", "source": _SMOKE_SOURCE, "bogus_param": "x"},
-        )
-    with pytest.raises(ValueError):  # wrong type -> source must be a dict
-        await server._dispatch(
-            "CreateInstance",
-            "incus_write",
-            {"name": "mcp-smoke-bad", "source": "not-a-dict"},
-        )
+    # error result from the dispatch layer before any request reaches Incus, not
+    # a silent pass-through. No resource is created - validation precedes the POST.
+    unknown = await server._dispatch(
+        "CreateInstance",
+        "incus_write",
+        {"name": "mcp-smoke-bad", "source": _SMOKE_SOURCE, "bogus_param": "x"},
+    )
+    assert "bogus_param" in unknown["error"]  # unknown param -> extra='forbid'
+    wrong_type = await server._dispatch(
+        "CreateInstance",
+        "incus_write",
+        {"name": "mcp-smoke-bad", "source": "not-a-dict"},
+    )
+    assert "source" in wrong_type["error"]  # wrong type -> source must be a dict

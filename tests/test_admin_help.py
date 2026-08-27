@@ -125,21 +125,21 @@ async def test_update_warning_invalid_status_rejected(stub_client, respx_mock):
     # Adversarial: Literal must reject before HTTP; widening back to `str`
     # would fire the route and fail the assertion.
     route = respx_mock.put("/1.0/warnings/uuid-1").respond(200, json=_sync({}))
-    with pytest.raises(ValueError, match="status"):
-        await server._dispatch(
-            "UpdateWarning",
-            "incus_admin",
-            {"uuid": "uuid-1", "status": "dismissed"},
-        )
+    result = await server._dispatch(
+        "UpdateWarning",
+        "incus_admin",
+        {"uuid": "uuid-1", "status": "dismissed"},
+    )
+    assert "status" in result["error"]
     assert not route.called
 
 
 async def test_patch_warning_invalid_status_rejected(stub_client, respx_mock):
     route = respx_mock.patch("/1.0/warnings/uuid-1").respond(200, json=_sync({}))
-    with pytest.raises(ValueError, match="status"):
-        await server._dispatch(
-            "PatchWarning",
-            "incus_admin",
-            {"uuid": "uuid-1", "status": "dismissed"},
-        )
+    result = await server._dispatch(
+        "PatchWarning",
+        "incus_admin",
+        {"uuid": "uuid-1", "status": "dismissed"},
+    )
+    assert "status" in result["error"]
     assert not route.called

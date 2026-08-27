@@ -8,8 +8,6 @@ Field(description=...) into the JSON Schema.
 
 from __future__ import annotations
 
-import pytest
-
 from incus_mcp import server
 
 HELP = server._build_help("incus_read")
@@ -113,12 +111,10 @@ def test_schema_list_volumes_type_description():
 
 async def test_unknown_param_rejected():
     # Pydantic validation runs before the fn is called - no HTTP needed.
-    with pytest.raises(ValueError, match="foo"):
-        await server._dispatch(
-            "ListInstances", "incus_read", {"foo": "bar"}
-        )
+    result = await server._dispatch("ListInstances", "incus_read", {"foo": "bar"})
+    assert "foo" in result["error"]
 
 
 async def test_missing_required_param():
-    with pytest.raises(ValueError, match="name"):
-        await server._dispatch("ShowInstance", "incus_read", {})
+    result = await server._dispatch("ShowInstance", "incus_read", {})
+    assert "name" in result["error"]

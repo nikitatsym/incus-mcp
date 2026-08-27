@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import json
 
-import pytest
-
 from incus_mcp import server
 from incus_mcp.tools import execute, helpers
 
@@ -158,10 +156,10 @@ async def test_bulk_instance_state_invalid_action_rejected(stub_client, respx_mo
     # Adversarial: Literal must reject before HTTP. Loosening back to `str`
     # would fire the route and fail the assertion.
     route = respx_mock.put("/1.0/instances").respond(200, json=_async("nope"))
-    with pytest.raises(ValueError, match="action"):
-        await server._dispatch(
-            "BulkInstanceState", "incus_execute", {"action": "delete"},
-        )
+    result = await server._dispatch(
+        "BulkInstanceState", "incus_execute", {"action": "delete"},
+    )
+    assert "action" in result["error"]
     assert not route.called
 
 
@@ -170,12 +168,12 @@ async def test_exec_instance_unknown_param_rejected(stub_client, respx_mock):
     route = respx_mock.post("/1.0/instances/i0/exec").respond(
         200, json=_async("nope"),
     )
-    with pytest.raises(ValueError, match="typo_param"):
-        await server._dispatch(
-            "ExecInstance",
-            "incus_execute",
-            {"name": "i0", "command": ["true"], "typo_param": "x"},
-        )
+    result = await server._dispatch(
+        "ExecInstance",
+        "incus_execute",
+        {"name": "i0", "command": ["true"], "typo_param": "x"},
+    )
+    assert "typo_param" in result["error"]
     assert not route.called
 
 
