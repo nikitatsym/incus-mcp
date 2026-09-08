@@ -10,9 +10,11 @@ programming-error edges.
 from __future__ import annotations
 
 import asyncio
+import json
 
 import httpx
 import pytest
+from mcp.types import CallToolResult, TextContent
 
 import incus_mcp.wait_registry as wr
 from incus_mcp import server
@@ -54,8 +56,30 @@ async def test_api_error_reports_status_and_body(stub_client, respx_mock):
 async def test_registered_group_reports_invalid_help_input():
     result = await _group_tool("incus_read")(operation="help", params={"search": 1})
 
-    assert result == {"error": "help parameter 'search' must be a string"}
+    assert isinstance(result, TextContent)
+    assert json.loads(result.text) == {
+        "error": "help parameter 'search' must be a string"
+    }
 
+
+
+async def test_registered_tools_return_compact_text_content():
+    assert all(
+        tool.fn_metadata.output_schema is None
+        for tool in server.mcp._tool_manager.list_tools()
+    )
+
+    result = await server.mcp.call_tool(
+        "incus_read", {"operation": "schema", "params": {"op": "ListInstances"}}
+    )
+    assert isinstance(result, CallToolResult)
+
+    assert result.structured_content is None
+    assert len(result.content) == 1
+    content = result.content[0]
+    assert isinstance(content, TextContent)
+    assert "\n" not in content.text
+    assert json.loads(content.text) == server._build_schema("incus_read", "ListInstances")
 
 async def test_transport_error_names_request_without_query(stub_client, respx_mock):
     respx_mock.get("/1.0/instances/i0").mock(
@@ -97,8 +121,10 @@ def test_root_version_reports_api_failure(stub_client, respx_mock):
 
     result = _root_tool("incus_version")()
 
-    assert "503" in result["error"]
-    assert "server unavailable" in result["error"]
+    assert isinstance(result, TextContent)
+    error = json.loads(result.text)["error"]
+    assert "503" in error
+    assert "server unavailable" in error
 
 
 def test_root_version_reports_transport_failure(stub_client, respx_mock):
@@ -106,7 +132,8 @@ def test_root_version_reports_transport_failure(stub_client, respx_mock):
 
     result = _root_tool("incus_version")()
 
-    assert result == {
+    assert isinstance(result, TextContent)
+    assert json.loads(result.text) == {
         "error": "Incus request failed: GET /1.0: ConnectTimeout: timed out"
     }
 
@@ -127,7 +154,11 @@ def test_root_version_keeps_its_success_shape(stub_client, respx_mock):
 
     result = _root_tool("incus_version")()
 
-    assert result["server"] == {"environment": "incus-1", "api_version": "1.0"}
+    assert isinstance(result, TextContent)
+    assert json.loads(result.text)["server"] == {
+        "environment": "incus-1",
+        "api_version": "1.0",
+    }
 
 
 def _failing_op(name: str) -> dict:
