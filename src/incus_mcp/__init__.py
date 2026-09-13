@@ -2,10 +2,15 @@ import argparse
 
 from mcp.server.transport_security import TransportSecuritySettings
 
+from .client import IncusClient
+from .config import Settings
+from .server import mcp
+from .tools.helpers import client_var
+
+__all__ = ["IncusClient", "Settings", "client_var", "main", "mcp"]
+
 
 def main() -> None:
-    from .server import mcp
-
     parser = argparse.ArgumentParser(
         prog="incus-mcp",
         description="MCP server for Incus. Serves MCP over stdio unless --http is given.",

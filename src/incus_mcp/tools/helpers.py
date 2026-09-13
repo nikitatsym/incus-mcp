@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import re
 import time
+from contextvars import ContextVar
 from typing import Any, cast
 
 from ..client import IncusClient
 from ..registry import _UNSET
 
+client_var: ContextVar[IncusClient | None] = ContextVar("incus_client", default=None)
 _client: IncusClient | None = None
 
 
@@ -54,7 +56,10 @@ _TEMPLATE_NAME_DESC = (
 
 
 def _get_client() -> IncusClient:
+    """Request-scoped client when a host bound one, else the process singleton."""
     global _client
+    if (bound := client_var.get()) is not None:
+        return bound
     if _client is None:
         _client = IncusClient()
     return _client

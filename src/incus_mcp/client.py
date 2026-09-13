@@ -5,7 +5,7 @@ from typing import Any
 
 import httpx
 
-from .config import get_settings
+from .config import Settings, get_settings
 
 
 class APIError(Exception):
@@ -39,28 +39,47 @@ class IncusClient:
         self._access_token = None
         return self
 
-    def __init__(self) -> None:
-        s = get_settings()
-        if not s.incus_url:
+    def __init__(
+        self,
+        base_url: str | None = None,
+        client_cert: str | None = None,
+        client_key: str | None = None,
+        oidc_issuer: str | None = None,
+        oidc_client_id: str | None = None,
+        username: str | None = None,
+        password: str | None = None,
+        ca_cert: str | None = None,
+        verify_ssl: bool | None = None,
+        *,
+        settings: Settings | None = None,
+    ) -> None:
+        s = settings or get_settings()
+        url = base_url or s.incus_url
+        if not url:
             raise ValueError("INCUS_URL is required")
 
-        verify: str | bool = s.incus_ca_cert if s.incus_ca_cert else s.incus_verify_ssl
+        cert = client_cert or s.incus_client_cert
+        key = client_key or s.incus_client_key
+        user = username or s.incus_username
+        secret = password or s.incus_password
+        ca = ca_cert or s.incus_ca_cert
+        verify: str | bool = ca or (s.incus_verify_ssl if verify_ssl is None else verify_ssl)
         kwargs: dict[str, Any] = {
-            "base_url": s.incus_url,
+            "base_url": url,
             "verify": verify,
             "timeout": 30.0,
         }
 
-        if s.incus_client_cert and s.incus_client_key:
-            kwargs["cert"] = (s.incus_client_cert, s.incus_client_key)
+        if cert and key:
+            kwargs["cert"] = (cert, key)
             self._auth_mode = "tls"
             self._access_token = None
-        elif s.incus_username and s.incus_password:
+        elif user and secret:
             self._auth_mode = "oidc"
-            self._oidc_issuer = s.incus_oidc_issuer
-            self._oidc_client_id = s.incus_oidc_client_id
-            self._username = s.incus_username
-            self._password = s.incus_password
+            self._oidc_issuer = oidc_issuer or s.incus_oidc_issuer
+            self._oidc_client_id = oidc_client_id or s.incus_oidc_client_id
+            self._username = user
+            self._password = secret
             self._access_token = None
             self._refresh_token = None
             self._token_expiry = 0.0
