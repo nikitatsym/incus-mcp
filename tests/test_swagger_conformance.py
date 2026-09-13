@@ -53,6 +53,11 @@ class _Waiver(NamedTuple):
 # Ops whose call shape the extractor below cannot read. ONLY code shapes belong
 # here - never a name mismatch, which is the whole point of this test.
 UNANALYZABLE_OK: dict[str, _Waiver] = {
+    "incus_version": _Waiver(
+        "unknown client method 'check'",
+        "calls the client's pathless startup probe; its GET /1.0 is the same "
+        "endpoint get_server checks",
+    ),
     "list_volumes": _Waiver(
         "path is a Name, not a literal",
         "path is assembled conditionally into a local variable; both variants "

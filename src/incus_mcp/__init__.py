@@ -5,7 +5,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from .client import IncusClient
 from .config import Settings
 from .server import mcp
-from .tools.helpers import client_var
+from .tools.helpers import _get_client, client_var
 
 __all__ = ["IncusClient", "Settings", "client_var", "main", "mcp"]
 
@@ -23,6 +23,9 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1", help="bind address for --http")
     parser.add_argument("--port", type=int, default=8000, help="port for --http")
     args = parser.parse_args()
+
+    # Fail here, with the failing request in the traceback, not on the first tool call.
+    _get_client().check()
 
     if args.http:
         # Stateless: the gateway in front opens a session per call; nothing outlives a request.

@@ -57,7 +57,7 @@ def incus_version() -> dict[str, Any]:
     """Get the Incus MCP server version and service status."""
     from importlib.metadata import version
 
-    server = cast("dict[str, Any]", _get_client().get("/1.0"))
+    server = _get_client().check()
     env = server.get("environment") or {}
     return {
         "mcp": version("incus-mcp"),

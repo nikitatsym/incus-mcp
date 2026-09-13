@@ -71,6 +71,8 @@ Or use the [setup page](https://nikitatsym.github.io/incus-mcp/) to generate the
 
 The package can also be imported: `mcp`, `Settings`, the client class, and `client_var` (a `ContextVar` the host sets per request) let one process serve several instances.
 
+Either transport refuses to start on a bad credential: `main()` calls `IncusClient.check()` (one `GET /1.0`) after parsing arguments, so the failing request is in the traceback instead of in the first tool call. A host serving several instances calls `check()` on each client itself.
+
 ## v2.5 features
 
 - **Write verification.** Every verifiable write is checked sent-vs-returned recursively: a silently dropped key (e.g. `config.limits.cpu` accepted then ignored by Incus) is reported as an error naming the full path instead of a phantom "201 Created".

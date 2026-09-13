@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -207,3 +207,7 @@ class IncusClient:
     def delete(self, path: str, **kwargs: Any) -> Any:
         self._ensure_token()
         return self._handle(self._http.delete(path, **kwargs))
+
+    def check(self) -> dict[str, Any]:
+        """The one authenticated request that proves the credential, made at startup."""
+        return cast("dict[str, Any]", self.get("/1.0"))
