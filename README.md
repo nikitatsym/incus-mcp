@@ -65,6 +65,10 @@ incus config trust add-certificate incus-mcp.crt
 
 Or use the [setup page](https://nikitatsym.github.io/incus-mcp/) to generate the config.
 
+### HTTP
+
+`incus-mcp --http` serves streamable HTTP at `http://127.0.0.1:8000/mcp` (`--host`, `--port`) instead of stdio, same environment variables. No authentication: put a gateway in front.
+
 ## v2.5 features
 
 - **Write verification.** Every verifiable write is checked sent-vs-returned recursively: a silently dropped key (e.g. `config.limits.cpu` accepted then ignored by Incus) is reported as an error naming the full path instead of a phantom "201 Created".
