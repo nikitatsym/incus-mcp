@@ -210,4 +210,10 @@ class IncusClient:
 
     def check(self) -> dict[str, Any]:
         """The one authenticated request that proves the credential, made at startup."""
-        return cast("dict[str, Any]", self.get("/1.0"))
+        data = cast("dict[str, Any]", self.get("/1.0"))
+        # /1.0 answers untrusted clients too, with 200 and a stub body: only the
+        # payload's `auth` separates a credential Incus accepts from one it rejects.
+        if data.get("auth") == "untrusted":
+            url = str(self._http.base_url.join("/1.0"))
+            raise APIError(403, "GET", url, "untrusted: Incus does not accept this credential")
+        return data

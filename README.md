@@ -71,7 +71,7 @@ Or use the [setup page](https://nikitatsym.github.io/incus-mcp/) to generate the
 
 The package can also be imported: `mcp`, `Settings`, the client class, and `client_var` (a `ContextVar` the host sets per request) let one process serve several instances.
 
-Either transport refuses to start on a bad credential: `main()` calls `IncusClient.check()` (one `GET /1.0`) after parsing arguments, so the failing request is in the traceback instead of in the first tool call. A host serving several instances calls `check()` on each client itself.
+Either transport refuses to start on a bad credential: `main()` calls `IncusClient.check()` after parsing arguments, so the failing request is in the traceback instead of in the first tool call. The check is one `GET /1.0`, and its answer must say the client is trusted - Incus serves that endpoint to untrusted clients as well, so a 200 alone proves nothing. A host serving several instances calls `check()` on each client itself.
 
 ## v2.5 features
 

@@ -161,6 +161,26 @@ def test_root_version_keeps_its_success_shape(stub_client, respx_mock):
     }
 
 
+def test_root_version_rejects_an_untrusted_answer(stub_client, respx_mock):
+    """Incus answers /1.0 for untrusted clients too, so a 200 is not a good credential."""
+    respx_mock.get("/1.0").respond(
+        200,
+        json={
+            "type": "sync",
+            "status": "Success",
+            "status_code": 200,
+            "metadata": {"api_version": "1.0", "auth": "untrusted"},
+        },
+    )
+
+    result = _root_tool("incus_version")()
+
+    assert isinstance(result, TextContent)
+    error = json.loads(result.text)["error"]
+    assert "403" in error
+    assert "untrusted" in error
+
+
 def _failing_op(name: str) -> dict:
     """Synthetic op that hits a bug instead of an expected failure."""
     raise AttributeError("'NoneType' object has no attribute 'get'")
