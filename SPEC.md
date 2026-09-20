@@ -10,7 +10,7 @@ MCP server for [Incus](https://linuxcontainers.org/incus/) container and VM mana
 
 - **MCP standard:** see the mcp-server-v2 spec in the Obsidian vault (`specs/mcp/mcp-server-v2.md`) - follow it exactly (structure, registry, server dispatch, groups, config, client patterns)
 - **API base:** `{INCUS_URL}/1.0`, auth: TLS client certificate or Bearer token (JWT signed with client cert)
-- **OpenAPI spec:** https://github.com/lxc/incus/blob/main/doc/rest-api.yaml (Swagger 2.0, 282 operations)
+- **OpenAPI spec:** https://github.com/lxc/incus/blob/main/doc/rest-api.yaml (Swagger 2.0)
 - **Docs:** https://linuxcontainers.org/incus/docs/main/rest-api/
 - **Health:** `GET /1.0` (200 = running, returns server environment)
 - **Hosting:** GitHub - CI/CD in `.github/workflows/build.yml`, Pages enabled (Actions source), `docs/index.html` setup page

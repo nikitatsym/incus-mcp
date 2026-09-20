@@ -2,8 +2,6 @@
 
 MCP server for [Incus](https://linuxcontainers.org/incus/) container and VM manager.
 
-210 operations = 209 grouped + 1 ROOT: read (87), write (75), execute (9), delete (34), admin (4).
-
 ## Install
 
 ### OIDC (Authentik app_password)
@@ -84,13 +82,13 @@ Either transport refuses to start on a bad credential: `main()` calls `IncusClie
 
 ## Groups
 
-| Group | Operations | Description |
-|---|---|---|
-| `incus_read` | 87 | Instances, images, networks, storage, profiles, projects, cluster, certificates, operations, warnings, resources, metrics, operation waiters |
-| `incus_write` | 75 | Create/update instances, images, networks, storage, profiles, projects, cluster, certificates |
-| `incus_execute` | 9 | Instance state changes (start/stop/restart/freeze), exec commands |
-| `incus_delete` | 34 | Delete all resource types |
-| `incus_admin` | 4 | Server config, warnings management |
+| Group | Description |
+|---|---|
+| `incus_read` | Instances, images, networks, storage, profiles, projects, cluster, certificates, operations, warnings, resources, metrics, operation waiters |
+| `incus_write` | Create/update instances, images, networks, storage, profiles, projects, cluster, certificates |
+| `incus_execute` | Instance state changes (start/stop/restart/freeze), exec commands |
+| `incus_delete` | Delete all resource types |
+| `incus_admin` | Server config, warnings management |
 
 Each group is a single MCP tool. Call with `operation="help"` to list available operations, or pass `operation="OperationName"` with `params={...}`.
 
