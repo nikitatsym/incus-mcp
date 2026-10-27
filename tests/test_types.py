@@ -39,18 +39,18 @@ def test_wait_snapshot_shape_matches_typed_dict():
     """
     from incus_mcp import wait_registry as wr
 
-    handle = wr.create_handle("op-uuid-x", {"timeout": 1.0, "interval": 1.0})
-    try:
-        snap = handle.snapshot()
-        required = {
-            "wait_id", "operation_id", "status", "status_code", "terminated",
-            "timed_out", "polls", "elapsed_seconds", "started_at", "ended_at",
-            "transitions", "verify_error", "enrichment_error",
-        }
-        missing = required - set(snap.keys())
-        assert not missing, f"WaitSnapshotDict required keys missing: {missing}"
-    finally:
-        wr.clear()
+    class _Owner:
+        pass
+
+    handle = wr.create_handle(_Owner(), "op-uuid-x", {"timeout": 1.0, "interval": 1.0})
+    snap = handle.snapshot()
+    required = {
+        "wait_id", "operation_id", "status", "status_code", "terminated",
+        "timed_out", "polls", "elapsed_seconds", "started_at", "ended_at",
+        "transitions", "verify_error", "enrichment_error",
+    }
+    missing = required - set(snap.keys())
+    assert not missing, f"WaitSnapshotDict required keys missing: {missing}"
 
 
 def test_dict_str_any_renders_as_bare_dict_in_help():

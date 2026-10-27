@@ -7,6 +7,7 @@ import asyncio
 import pytest
 
 import incus_mcp.wait_registry as wr
+from incus_mcp.client import IncusClient
 from incus_mcp.tools import helpers, read
 
 
@@ -84,7 +85,7 @@ async def test_bad_uuid_apierror_propagates_no_handle(stub_client, respx_mock):
     )
     with pytest.raises(APIError):
         await read.operation_wait_start(operation_id="op-bad", interval=0.01)
-    assert wr.list_handles() == []
+    assert wr.list_handles(stub_client) == []
 
 
 async def test_poll_max_block_returns_snapshot_when_running(stub_client, respx_mock):
@@ -124,11 +125,35 @@ async def test_waits_list_reaps_expired(stub_client, respx_mock, monkeypatch):
     )
     assert snap["terminated"] is True
     # Push time past TTL.
-    handle = wr.get_handle(snap["wait_id"])
+    handle = wr.get_handle(stub_client, snap["wait_id"])
     assert handle is not None
     handle.ended_at = handle.ended_at - (wr._DEFAULT_TTL_SECONDS + 10)
     listed = await read.waits_list()
     assert listed == []  # reaped opportunistically
+
+
+async def test_waits_are_scoped_to_the_bound_client(stub_client, respx_mock):
+    # mcps-host binds one client per instance into client_var; one process,
+    # several instances. Another instance must not see or cancel this wait.
+    respx_mock.get("/1.0/operations/op-own").respond(
+        200, json=_wrap_op("op-own", status_code=103),
+    )
+    snap = await read.operation_wait_start(
+        operation_id="op-own", interval=0.01, timeout=60,
+    )
+    token = helpers.client_var.set(IncusClient._for_tests(stub_client._http))
+    try:
+        assert await read.waits_list() == []
+        with pytest.raises(ValueError, match="Unknown wait_id"):
+            await read.operation_wait_cancel(wait_id=snap["wait_id"])
+        with pytest.raises(ValueError, match="Unknown wait_id"):
+            await read.operation_wait_poll(wait_id=snap["wait_id"])
+    finally:
+        helpers.client_var.reset(token)
+    own = await read.waits_list()
+    assert [w["wait_id"] for w in own] == [snap["wait_id"]]
+    assert own[0]["terminated"] is False
+    await read.operation_wait_cancel(wait_id=snap["wait_id"])
 
 
 # ── Post-terminal verify drain (adversarial: silent-drop) ─────────────

@@ -1193,7 +1193,7 @@ async def operation_wait_start(
     payload = await asyncio.to_thread(
         _get_client().get, f"/1.0/operations/{operation_id}",
     )
-    handle = _wr.create_handle(operation_id, {
+    handle = _wr.create_handle(_get_client(), operation_id, {
         "timeout": float(timeout),
         "interval": float(interval),
         "max_poll_failures": float(max_poll_failures),
@@ -1232,7 +1232,7 @@ async def operation_wait_poll(
     ] = 0,
 ) -> WaitSnapshotDict:
     """Return the current snapshot for a wait handle, optionally blocking up to `max_block`s."""
-    handle = _wr.get_handle(wait_id)
+    handle = _wr.get_handle(_get_client(), wait_id)
     if handle is None:
         raise ValueError(f"Unknown wait_id {wait_id!r}")
     if max_block > 0 and not handle.terminated and not handle.timed_out:
@@ -1262,7 +1262,7 @@ async def operation_wait_cancel(
     CancelOperation (incus_delete) to cancel the operation server-side.
     Cancelling also does NOT run pending-verify; the entry stays until TTL.
     """
-    handle = _wr.get_handle(wait_id)
+    handle = _wr.get_handle(_get_client(), wait_id)
     if handle is None:
         raise ValueError(f"Unknown wait_id {wait_id!r}")
     if handle.task is not None and not handle.task.done():
@@ -1273,8 +1273,9 @@ async def operation_wait_cancel(
 @_op(incus_read)
 async def waits_list() -> list[WaitSnapshotDict]:
     """List all in-flight and recently-terminal waits. Reaps expired opportunistically."""
-    _wr.reap_expired()
-    return [h.snapshot() for h in _wr.list_handles()]
+    client = _get_client()
+    _wr.reap_expired(client)
+    return [h.snapshot() for h in _wr.list_handles(client)]
 
 
 # ── Warnings ─────────────────────────────────────────────────────────

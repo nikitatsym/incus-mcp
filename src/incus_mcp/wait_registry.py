@@ -2,6 +2,8 @@
 
 Terminal handles reap after TTL. One polling task per handle owns writes;
 readers grab a snapshot. Pattern: mcp-server-v2 spec, "Long-running waiters".
+Handles are kept per client: under mcps-host one process serves several
+instances, and one instance must not list or cancel another's waits.
 """
 
 from __future__ import annotations
@@ -10,6 +12,7 @@ import asyncio
 import secrets
 import time
 from typing import Any
+from weakref import WeakKeyDictionary
 
 from .types import WaitSnapshotDict, WaitTransitionDict
 
@@ -156,38 +159,44 @@ class WaitHandle:
         return snap
 
 
-_registry: dict[str, WaitHandle] = {}
+_registries: WeakKeyDictionary[object, dict[str, WaitHandle]] = WeakKeyDictionary()
 
 
-def create_handle(operation_id: str, options: dict[str, float]) -> WaitHandle:
+def _waits(client: object) -> dict[str, WaitHandle]:
+    return _registries.setdefault(client, {})
+
+
+def create_handle(client: object, operation_id: str, options: dict[str, float]) -> WaitHandle:
     wait_id = f"w-{secrets.token_hex(4)}"
     handle = WaitHandle(wait_id, operation_id, options)
-    _registry[wait_id] = handle
+    _waits(client)[wait_id] = handle
     return handle
 
 
-def get_handle(wait_id: str) -> WaitHandle | None:
-    return _registry.get(wait_id)
+def get_handle(client: object, wait_id: str) -> WaitHandle | None:
+    return _waits(client).get(wait_id)
 
 
-def list_handles() -> list[WaitHandle]:
-    return list(_registry.values())
+def list_handles(client: object) -> list[WaitHandle]:
+    return list(_waits(client).values())
 
 
-def reap_expired(now: float | None = None) -> int:
+def reap_expired(client: object, now: float | None = None) -> int:
     now = now if now is not None else time.time()
+    waits = _waits(client)
     stale = [
-        wid for wid, h in _registry.items()
+        wid for wid, h in waits.items()
         if h.ended_at is not None and (now - h.ended_at) > _DEFAULT_TTL_SECONDS
     ]
     for wid in stale:
-        del _registry[wid]
+        del waits[wid]
     return len(stale)
 
 
 def clear() -> None:
-    """Cancel any running tasks and drop all handles. Test-only."""
-    for h in _registry.values():
-        if h.task is not None and not h.task.done():
-            h.task.cancel()
-    _registry.clear()
+    """Cancel any running tasks and drop all handles of every client. Test-only."""
+    for waits in _registries.values():
+        for h in waits.values():
+            if h.task is not None and not h.task.done():
+                h.task.cancel()
+    _registries.clear()

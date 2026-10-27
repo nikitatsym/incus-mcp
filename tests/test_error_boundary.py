@@ -110,7 +110,7 @@ async def test_async_waiter_failure_maps_at_await_time(stub_client, respx_mock):
     )
 
     assert "404" in result["error"]
-    assert wr.list_handles() == []
+    assert wr.list_handles(stub_client) == []
 
 
 def test_root_version_reports_api_failure(stub_client, respx_mock):
