@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import threading
 import time
 from contextvars import ContextVar
 from typing import Any, cast
@@ -192,6 +193,8 @@ _pending_verify: dict[
     str, tuple[dict[str, Any], str, dict[str, str], float]
 ] = {}
 _PENDING_VERIFY_TTL = 3600.0
+# Touched from `_run_op` worker threads and from waiters on the event loop.
+_pending_verify_lock = threading.Lock()
 
 
 def _register_pending_verify(
@@ -207,20 +210,22 @@ def _register_pending_verify(
     if not op_id or not isinstance(op_id, str):
         return
     now = time.time()
-    stale = [
-        k for k, (_, _, _, ts) in _pending_verify.items()
-        if now - ts > _PENDING_VERIFY_TTL
-    ]
-    for k in stale:
-        _pending_verify.pop(k, None)
-    _pending_verify[op_id] = (sent, target_path, dict(target_query_params or {}), now)
+    with _pending_verify_lock:
+        stale = [
+            k for k, (_, _, _, ts) in _pending_verify.items()
+            if now - ts > _PENDING_VERIFY_TTL
+        ]
+        for k in stale:
+            _pending_verify.pop(k, None)
+        _pending_verify[op_id] = (sent, target_path, dict(target_query_params or {}), now)
 
 
 def _drain_pending_verify(
     op_id: str,
 ) -> tuple[dict[str, Any], str, dict[str, str]] | None:
     """Pop and return the entry for `op_id`, or None if absent/already drained."""
-    entry = _pending_verify.pop(op_id, None)
+    with _pending_verify_lock:
+        entry = _pending_verify.pop(op_id, None)
     if entry is None:
         return None
     sent, target_path, target_qp, _ = entry

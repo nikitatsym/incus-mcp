@@ -8,6 +8,8 @@ metadata dict verify sees.
 from __future__ import annotations
 
 import json
+import threading
+import time
 
 import pytest
 
@@ -195,6 +197,47 @@ def test_ttl_reaps_stale_entries_on_next_register(stub_client, respx_mock, monke
     respx_mock.post("/1.0/instances").respond(200, json=_async("d"))
     write.create_instance(name="i-d", source={"type": "none"})
     assert set(helpers._pending_verify) == {"d"}
+
+
+# ── Concurrent register + drain ──────────────────────────────────────
+
+
+class _InterleavingDict(dict):
+    """Runs `hook` once, right after the first item of the next items() walk."""
+
+    def __init__(self, entries, hook):
+        super().__init__(entries)
+        self._hook = hook
+
+    def items(self):
+        it = iter(super().items())
+        yield next(it)
+        self._hook()
+        yield from it
+
+
+def test_drain_waits_for_register_reap(monkeypatch):
+    # Write ops register from worker threads while waiters drain on the loop.
+    # This drain lands mid-way through the reap walk; unguarded, it pops the
+    # dict under the iterator and the register raises RuntimeError.
+    drained = []
+    drainer = threading.Thread(
+        target=lambda: drained.append(helpers._drain_pending_verify("op-old")),
+    )
+
+    def drain_concurrently():
+        drainer.start()
+        drainer.join(timeout=0.2)
+
+    entry = ({"k": "v"}, "/1.0/instances/old", {}, time.time())
+    pending = _InterleavingDict({"op-old": entry, "op-other": entry}, drain_concurrently)
+    monkeypatch.setattr(helpers, "_pending_verify", pending)
+
+    helpers._register_pending_verify({"class": "task", "id": "op-new"}, {"k": "v"}, "/1.0/x")
+    drainer.join()
+
+    assert drained == [({"k": "v"}, "/1.0/instances/old", {})]
+    assert set(pending) == {"op-other", "op-new"}
 
 
 # ── Root-skip is root-only; nested keys are real config ──────────────

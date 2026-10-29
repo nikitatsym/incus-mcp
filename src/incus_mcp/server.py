@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import inspect
 import pkgutil
@@ -9,7 +10,7 @@ import re
 import string
 import types
 import typing
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from typing import Any, cast
 from urllib.parse import urlsplit, urlunsplit
 
@@ -168,7 +169,7 @@ def _coerce_call(fn: OpFn, params: dict[str, Any]) -> Any:
     Field-level type mismatches, missing required fields, and unknown keys
     all raise ValueError pointing at the offending field. Omitted
     `_UNSET`-defaulted keys never reach fn (`exclude_unset=True`). Async
-    functions return their coroutine as-is - `_dispatch` awaits it.
+    functions return their coroutine as-is - `_run_op` awaits it.
     """
     model: type[BaseModel] = fn._mcp_params_model
     try:
@@ -412,6 +413,18 @@ def _error_result(exc: Exception) -> dict[str, str]:
     return {"error": _redact_error_text(exc)}
 
 
+async def _run_op(fn: Callable[..., Any], call: Callable[[], Any]) -> Any:
+    """Invoke an op: a sync op in a worker thread, an async op on the event loop.
+
+    Sync ops block on HTTP; on the loop they would stall every request the
+    process serves. `asyncio.to_thread` copies the context, so the bound
+    `client_var` follows the call into the thread.
+    """
+    if inspect.iscoroutinefunction(fn):
+        return await call()
+    return await asyncio.to_thread(call)
+
+
 async def _dispatch(
     operation: str, group_name: str, params: dict[str, Any]
 ) -> Any:
@@ -420,9 +433,10 @@ async def _dispatch(
     Bad params, an unknown operation, an Incus API error, and a transport
     failure all come back as `{"error": ...}`; an exception crossing the MCP
     boundary would reach the caller as a contextless tool failure instead.
-    Async ops (Step 8 waiters) are awaited here, inside the same guard, so a
-    failure raised mid-wait maps identically; sync ops keep the direct-call
-    path. Cancellation and programming errors still propagate.
+    The op runs through `_run_op` inside the same guard, so a failure raised
+    by a sync op in its worker thread or by an async op (Step 8 waiters) at
+    await time maps identically; help and schema stay on the event loop.
+    Cancellation and programming errors still propagate.
     """
     try:
         if operation == "help":
@@ -444,9 +458,7 @@ async def _dispatch(
                 f"Unknown operation {operation!r} in {group_name}. "
                 f"Available: {', '.join(sorted(ops))}"
             )
-        result = _coerce_call(fn, params)
-        if inspect.iscoroutine(result):
-            result = await cast("Awaitable[Any]", result)
+        result = await _run_op(fn, functools.partial(_coerce_call, fn, params))
         return result
     except _EXPECTED_FAILURES as exc:
         return _error_result(exc)

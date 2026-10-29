@@ -1037,7 +1037,7 @@ def show_operation(id: str) -> OperationDict:
 def wait_operation(id: str) -> OperationDict:
     """Wait for an operation to complete via Incus's server-side long-poll.
 
-    Blocks the MCPServer event loop until Incus responds. One-shot short waits
+    Holds the tool call open until Incus responds. One-shot short waits
     only; prefer OperationWaitStart for slow operations. On terminal success
     (status_code == 200), drains any pending-verify entry for `id` and raises
     ValueError if the target GET reveals a silent-drop of a sent config key.
