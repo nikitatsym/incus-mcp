@@ -73,7 +73,8 @@ Either transport refuses to start on a bad credential: `main()` calls `IncusClie
 
 ## v2.5 features
 
-- **Write verification.** Every verifiable write is checked sent-vs-returned recursively: a silently dropped key (e.g. `config.limits.cpu` accepted then ignored by Incus) is reported as an error naming the full path instead of a phantom "201 Created".
+- **Write verification.** A verifiable write is checked against the resource as Incus stored it: Incus answers most sync creates, renames and updates with an empty body rather than the resource (`create_bucket` gets the bucket's admin key instead), so these ops read the written resource back with a GET (a rename under its new name) and check that every key they sent is there (recursively through nested objects). A key the write did not take - Incus ignores JSON names it does not know - is reported as an error naming its full path instead of a phantom success. Keys sent as `""` or `null` clear a value, so their absence is not checked. `create_bucket_key` is checked against its answer, which is the created key, and `request_join_token` against the member name in its token operation. `update_cluster` is not verified: disabling clustering restarts Incus, and enabling or joining is async.
+- **Cluster disable guard.** Disabling clustering makes Incus reset its database (storage pools, networks, images, trusted certificates), and Incus reads a missing `enabled` as a disable. `update_cluster` therefore requires `enabled` and refuses to disable on a server that is not clustered.
 - **`operation='schema'`.** Any group returns a machine-readable JSON Schema for an operation: `params={"op": "CreateInstance"}`.
 - **Richer `help`.** `operation='help'` renders each parameter with its type, `?` for optional, `T | None` for nullable, and a bullet with the parameter's description.
 - **`_UNSET` semantics.** Omitting a parameter differs from passing `null`: omitted params never reach the API; an explicit `null` clears a server-side value on PUT/PATCH.
@@ -100,17 +101,17 @@ Each group is a single MCP tool. Call with `operation="help"` to list available 
 git config core.hooksPath .githooks
 ```
 
-Integration smoke tests hit a real Incus server and are excluded from the default run (`-m integration`). Provision a throwaway Incus and run them:
+Integration smoke tests hit a real Incus server and are excluded from the default run (`-m integration`). They target the Incus 7.0 LTS series. Provision a throwaway Incus and run them:
 
-- **Linux host or VM:** `sudo scripts/e2e-env.sh && (. .e2e/env && uv run python dev.py e2e)`. The script installs Incus, does a minimal `incus admin init`, pre-pulls the `e2e-alpine` image, mints a client cert, and writes `.e2e/env` (git-ignored) with the matching `INCUS_*` vars. Idempotent - re-runs are no-ops.
-- **macOS:** Incus has no macOS daemon, so run the same recipe inside a Linux VM: `limactl start template://ubuntu-lts`, then clone the repo and run the Linux recipe inside the VM. This is the environment CI uses.
+- **Linux host or VM (Debian/Ubuntu):** `sudo scripts/e2e-env.sh && (. .e2e/env && uv run python dev.py e2e)`. The script adds Zabbly's `lts-7.0` apt repository ([zabbly/incus](https://github.com/zabbly/incus)), checks its signing key against the published fingerprint and refuses to go on if it differs, and installs Incus 7.0 from it. It then creates the `default` dir storage pool, the `incusbr0` bridge and the default-profile devices, pre-pulls `images:alpine/3.24` as `e2e-alpine`, mints a client cert, and writes `.e2e/env` (git-ignored) with the matching `INCUS_*` vars. Idempotent - re-runs are no-ops.
+- **macOS:** Incus has no macOS daemon, so run the same recipe inside a Linux VM: `limactl start template://ubuntu-lts`, then clone the repo and run the Linux recipe inside the VM.
 
-CI runs the same smokes in a dedicated `e2e` job (`.github/workflows/build.yml`) that gates the release build.
+CI runs the same script and smokes in a dedicated `e2e` job (`.github/workflows/build.yml`, `ubuntu-24.04`) that gates the release build.
 
 ### Swagger conformance
 
-`tests/test_swagger_conformance.py` reads every registered operation off its own AST and checks method, path, query-param names, body-field names and enum values against Incus's swagger spec - Incus ignores names it does not know, so a typo returns 200 and silently does nothing. It runs in the default gate against the copy of `doc/rest-api.yaml` vendored in `tests/data/`, since no running Incus serves that spec. Re-pin it to a newer Incus with:
+`tests/test_swagger_conformance.py` reads every registered operation off its own AST and checks method, path, query-param names, body-field names and enum values against Incus's swagger spec - Incus ignores names it does not know, so a typo returns 200 and silently does nothing. It runs in the default gate against the copy of `doc/rest-api.yaml` vendored in `tests/data/`, since no running Incus serves that spec. The copy is pinned to the Incus release the smokes run on; re-pin it with:
 
 ```bash
-uv run --with pyyaml python scripts/fetch-incus-spec.py v7.3.0
+uv run --with pyyaml python scripts/fetch-incus-spec.py v7.0.2
 ```

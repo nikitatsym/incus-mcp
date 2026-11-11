@@ -33,6 +33,24 @@
    "type": "object",
    "x-go-package": "github.com/lxc/incus/v7/shared/api"
   },
+  "ApplicationAction": {
+   "properties": {
+    "action": {
+     "type": "string",
+     "x-go-name": "Action"
+    },
+    "config": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "type": "object",
+     "x-go-name": "Config"
+    }
+   },
+   "title": "ApplicationAction defines a generic struct that can be used when triggering an application-specific action.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
   "BackupTarget": {
    "properties": {
     "access_key": {
@@ -838,6 +856,99 @@
    "type": "object",
    "x-go-package": "github.com/lxc/incus/v7/shared/api"
   },
+  "DebugKernel": {
+   "properties": {
+    "architecture": {
+     "type": "string",
+     "x-go-name": "Architecture"
+    },
+    "cpu_baseline": {
+     "type": "string",
+     "x-go-name": "CPUBaseline"
+    },
+    "modules": {
+     "items": {
+      "$ref": "#/definitions/DebugKernelModule"
+     },
+     "type": "array",
+     "x-go-name": "Modules"
+    },
+    "version": {
+     "type": "string",
+     "x-go-name": "Version"
+    }
+   },
+   "title": "DebugKernel represents kernel debug information for the system.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "DebugKernelModule": {
+   "properties": {
+    "dependencies": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Dependencies"
+    },
+    "in_use": {
+     "type": "boolean",
+     "x-go-name": "InUse"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    }
+   },
+   "title": "DebugKernelModule represents a loaded kernel module.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "DebugReport": {
+   "properties": {
+    "media_type": {
+     "type": "string",
+     "x-go-name": "MediaType"
+    },
+    "metrics": {
+     "items": {
+      "$ref": "#/definitions/DebugReportMetric"
+     },
+     "type": "array",
+     "x-go-name": "Metrics"
+    },
+    "timestamp": {
+     "type": "string",
+     "x-go-name": "Timestamp"
+    }
+   },
+   "title": "DebugReport represents a systemd-report report.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "DebugReportMetric": {
+   "properties": {
+    "fields": {
+     "additionalProperties": {},
+     "type": "object",
+     "x-go-name": "Fields"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "object": {
+     "type": "string",
+     "x-go-name": "Object"
+    },
+    "value": {
+     "x-go-name": "Value"
+    }
+   },
+   "title": "DebugReportMetric represents a single metric from a systemd-report report.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
   "DevicesMap": {
    "description": "DevicesMap type is used to hold incus devices configurations. In contrast to\nplain map[string]map[string]string it provides unmarshal methods for JSON and\nYAML, which gracefully handle numbers and bools.",
    "type": "object",
@@ -941,6 +1052,18 @@
      "format": "date-time",
      "type": "string",
      "x-go-name": "LastUsedAt"
+    },
+    "locations": {
+     "description": "List of cluster members with a local copy of the image\n\nAPI extension: image_locations",
+     "example": [
+      "server01",
+      "server02"
+     ],
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Locations"
     },
     "profiles": {
      "description": "List of profiles to use when creating from this image (if none provided by user)\n\nAPI extension: image_profiles",
@@ -1590,7 +1713,6 @@
    "properties": {
     "certificates": {
      "description": "Certificates to add\n\nAPI extension: init_preseed_certificates.",
-     "example": "PEM encoded certificate",
      "items": {
       "$ref": "#/definitions/CertificatesPost"
      },
@@ -1610,7 +1732,6 @@
     },
     "networks": {
      "description": "Networks by project to add",
-     "example": "Network on the \"default\" project",
      "items": {
       "$ref": "#/definitions/InitNetworksProjectPost"
      },
@@ -1619,7 +1740,6 @@
     },
     "profiles": {
      "description": "Profiles to add",
-     "example": "\"default\" profile with a root disk device",
      "items": {
       "$ref": "#/definitions/InitProfileProjectPost"
      },
@@ -1628,7 +1748,6 @@
     },
     "projects": {
      "description": "Projects to add",
-     "example": "\"default\" project",
      "items": {
       "$ref": "#/definitions/ProjectsPost"
      },
@@ -1637,7 +1756,6 @@
     },
     "storage_pools": {
      "description": "Storage Pools to add",
-     "example": "local dir storage pool",
      "items": {
       "$ref": "#/definitions/StoragePoolsPost"
      },
@@ -1646,7 +1764,6 @@
     },
     "storage_volumes": {
      "description": "Storage Volumes to add\n\nAPI extension: init_preseed_storage_volumes.",
-     "example": "local dir storage volume",
      "items": {
       "$ref": "#/definitions/InitStorageVolumesProjectPost"
      },
@@ -1695,7 +1812,6 @@
    "properties": {
     "certificates": {
      "description": "Certificates to add\n\nAPI extension: init_preseed_certificates.",
-     "example": "PEM encoded certificate",
      "items": {
       "$ref": "#/definitions/CertificatesPost"
      },
@@ -1718,7 +1834,6 @@
     },
     "networks": {
      "description": "Networks by project to add",
-     "example": "Network on the \"default\" project",
      "items": {
       "$ref": "#/definitions/InitNetworksProjectPost"
      },
@@ -1727,7 +1842,6 @@
     },
     "profiles": {
      "description": "Profiles to add",
-     "example": "\"default\" profile with a root disk device",
      "items": {
       "$ref": "#/definitions/InitProfileProjectPost"
      },
@@ -1736,7 +1850,6 @@
     },
     "projects": {
      "description": "Projects to add",
-     "example": "\"default\" project",
      "items": {
       "$ref": "#/definitions/ProjectsPost"
      },
@@ -1745,7 +1858,6 @@
     },
     "storage_pools": {
      "description": "Storage Pools to add",
-     "example": "local dir storage pool",
      "items": {
       "$ref": "#/definitions/StoragePoolsPost"
      },
@@ -1754,7 +1866,6 @@
     },
     "storage_volumes": {
      "description": "Storage Volumes to add\n\nAPI extension: init_preseed_storage_volumes.",
-     "example": "local dir storage volume",
      "items": {
       "$ref": "#/definitions/InitStorageVolumesProjectPost"
      },
@@ -2457,6 +2568,12 @@
      "example": "foo",
      "type": "string",
      "x-go-name": "Project"
+    },
+    "refresh": {
+     "description": "Whether to transfer a running instance incrementally\n\nAPI extension: instance_refresh_migration",
+     "example": false,
+     "type": "boolean",
+     "x-go-name": "Refresh"
     },
     "target": {
      "$ref": "#/definitions/InstancePostTarget"
@@ -3324,12 +3441,6 @@
    "type": "object",
    "x-go-package": "github.com/lxc/incus/v7/shared/api"
   },
-  "MetadataConfigEntityName": {
-   "description": "MetadataConfigEntityName represents a main API object type",
-   "example": "instance",
-   "type": "string",
-   "x-go-package": "github.com/lxc/incus/v7/shared/api"
-  },
   "MetadataConfigGroup": {
    "description": "MetadataConfigGroup represents a group of config keys",
    "properties": {
@@ -3345,12 +3456,6 @@
     }
    },
    "type": "object",
-   "x-go-package": "github.com/lxc/incus/v7/shared/api"
-  },
-  "MetadataConfigGroupName": {
-   "description": "MetadataConfigGroupName represents the name of a group of config keys",
-   "example": "volatile",
-   "type": "string",
    "x-go-package": "github.com/lxc/incus/v7/shared/api"
   },
   "MetadataConfigKey": {
@@ -8545,6 +8650,2009 @@
    "type": "object",
    "x-go-package": "github.com/lxc/incus/v7/shared/api"
   },
+  "SystemFallbackListener": {
+   "description": "SystemFallbackListener defines a struct to configure the fallback HTTPS listener that will\nactivate if the primary application fails to start, ensuring that basic API connectivity\nto the system isn't lost.",
+   "properties": {
+    "config": {
+     "$ref": "#/definitions/SystemFallbackListenerConfig"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemFallbackListenerState"
+    }
+   },
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemFallbackListenerConfig": {
+   "properties": {
+    "listen_address": {
+     "type": "string",
+     "x-go-name": "ListenAddress"
+    },
+    "persistent": {
+     "type": "boolean",
+     "x-go-name": "Persistent"
+    },
+    "trusted_client_certificates": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "TrustedClientCertificates"
+    }
+   },
+   "title": "SystemFallbackListenerConfig holds fallback listener configuration settings.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemFallbackListenerState": {
+   "properties": {
+    "active": {
+     "type": "boolean",
+     "x-go-name": "Active"
+    }
+   },
+   "title": "SystemFallbackListenerState holds information about the current fallback listener state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernel": {
+   "properties": {
+    "config": {
+     "$ref": "#/definitions/SystemKernelConfig"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemKernelState"
+    }
+   },
+   "title": "SystemKernel defines a struct to hold information about the system's kernel-level configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfig": {
+   "properties": {
+    "blacklist_modules": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "BlacklistModules"
+    },
+    "console": {
+     "items": {
+      "$ref": "#/definitions/SystemKernelConfigConsole"
+     },
+     "type": "array",
+     "x-go-name": "Console"
+    },
+    "cpu": {
+     "$ref": "#/definitions/SystemKernelConfigCPU"
+    },
+    "memory": {
+     "$ref": "#/definitions/SystemKernelConfigMemory"
+    },
+    "network": {
+     "$ref": "#/definitions/SystemKernelConfigNetwork"
+    },
+    "pci": {
+     "$ref": "#/definitions/SystemKernelConfigPCI"
+    },
+    "zfs": {
+     "$ref": "#/definitions/SystemKernelConfigZFS"
+    }
+   },
+   "title": "SystemKernelConfig holds the kernel-level configuration data.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfigCPU": {
+   "properties": {
+    "scaling_governor": {
+     "type": "string",
+     "x-go-name": "ScalingGovernor"
+    }
+   },
+   "title": "SystemKernelConfigCPU holds CPU-specific kernel configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfigConsole": {
+   "properties": {
+    "baud_rate": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "BaudRate"
+    },
+    "device": {
+     "type": "string",
+     "x-go-name": "Device"
+    }
+   },
+   "title": "SystemKernelConfigConsole holds console-specific kernel configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfigMemory": {
+   "properties": {
+    "persistent_hugepages": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "PersistentHugepages"
+    },
+    "zram_swap_size": {
+     "type": "string",
+     "x-go-name": "ZramSwapSize"
+    }
+   },
+   "title": "SystemKernelConfigMemory holds memory-specific kernel configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfigNetwork": {
+   "properties": {
+    "buffer_size": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "BufferSize"
+    },
+    "netdev_max_backlog": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "NetdevMaxBacklog"
+    },
+    "queuing_discipline": {
+     "type": "string",
+     "x-go-name": "QueuingDiscipline"
+    },
+    "tcp_congestion_algorithm": {
+     "type": "string",
+     "x-go-name": "TCPCongestionAlgorithm"
+    },
+    "tcp_mtu_probing": {
+     "type": "boolean",
+     "x-go-name": "TCPMTUProbing"
+    }
+   },
+   "title": "SystemKernelConfigNetwork holds network-specific kernel configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfigPCI": {
+   "properties": {
+    "passthrough": {
+     "items": {
+      "$ref": "#/definitions/SystemKernelConfigPCIPassthrough"
+     },
+     "type": "array",
+     "x-go-name": "Passthrough"
+    },
+    "sriov": {
+     "items": {
+      "$ref": "#/definitions/SystemKernelConfigPCISRIOV"
+     },
+     "type": "array",
+     "x-go-name": "SRIOV"
+    }
+   },
+   "title": "SystemKernelConfigPCI holds PCI-specific kernel configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfigPCIPassthrough": {
+   "properties": {
+    "pci_address": {
+     "type": "string",
+     "x-go-name": "PCIAddress"
+    },
+    "product_id": {
+     "type": "string",
+     "x-go-name": "ProductID"
+    },
+    "vendor_id": {
+     "type": "string",
+     "x-go-name": "VendorID"
+    }
+   },
+   "title": "SystemKernelConfigPCIPassthrough defines a specific PCI device that should be made available for passthrough to a VM.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfigPCISRIOV": {
+   "properties": {
+    "pci_address": {
+     "type": "string",
+     "x-go-name": "PCIAddress"
+    },
+    "vf_count": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "VFCount"
+    }
+   },
+   "title": "SystemKernelConfigPCISRIOV defines the number of SR-IOV virtual functions to create on a PCI device.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelConfigZFS": {
+   "properties": {
+    "arc_max_size": {
+     "type": "string",
+     "x-go-name": "ARCMaxSize"
+    }
+   },
+   "title": "SystemKernelConfigZFS holds ZFS-specific kernel configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelState": {
+   "properties": {
+    "memory": {
+     "$ref": "#/definitions/SystemKernelStateMemory"
+    }
+   },
+   "title": "SystemKernelState represents state for the system's kernel-level configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelStateMemory": {
+   "properties": {
+    "zram_swap": {
+     "$ref": "#/definitions/SystemKernelStateMemoryZramSwap"
+    }
+   },
+   "title": "SystemKernelStateMemory represents state for the system's kernel-level memory configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemKernelStateMemoryZramSwap": {
+   "description": "Reported sizes are in bytes.",
+   "properties": {
+    "compressed_size": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "CompressedSize"
+    },
+    "compression_ratio": {
+     "format": "double",
+     "type": "number",
+     "x-go-name": "CompressionRatio"
+    },
+    "disk_size": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "Disksize"
+    },
+    "incompressed_size": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "UncompressedSize"
+    },
+    "total_memory_use": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "TotalMemoryUse"
+    }
+   },
+   "title": "SystemKernelStateMemoryZramSwap reports statistics about the configured zram-backed swap device, if present.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemLogging": {
+   "properties": {
+    "config": {
+     "$ref": "#/definitions/SystemLoggingConfig"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemLoggingState"
+    }
+   },
+   "title": "SystemLogging defines a struct to hold information about the system's logging configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemLoggingConfig": {
+   "properties": {
+    "journal_upload": {
+     "$ref": "#/definitions/SystemLoggingJournalUpload"
+    },
+    "syslog": {
+     "$ref": "#/definitions/SystemLoggingSyslog"
+    }
+   },
+   "title": "SystemLoggingConfig holds the modifiable part of the logging data.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemLoggingJournalUpload": {
+   "properties": {
+    "tls_ca_certificate": {
+     "type": "string",
+     "x-go-name": "TLSCACertificate"
+    },
+    "tls_client_certificate": {
+     "type": "string",
+     "x-go-name": "TLSClientCertificate"
+    },
+    "tls_client_key": {
+     "type": "string",
+     "x-go-name": "TLSClientKey"
+    },
+    "url": {
+     "type": "string",
+     "x-go-name": "URL"
+    }
+   },
+   "title": "SystemLoggingJournalUpload contains the configuration options for uploading the journal to a remote server.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemLoggingState": {
+   "title": "SystemLoggingState represents state for the system's logging configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemLoggingSyslog": {
+   "properties": {
+    "address": {
+     "type": "string",
+     "x-go-name": "Address"
+    },
+    "log_format": {
+     "type": "string",
+     "x-go-name": "LogFormat"
+    },
+    "protocol": {
+     "type": "string",
+     "x-go-name": "Protocol"
+    }
+   },
+   "title": "SystemLoggingSyslog contains the configuration options for a remote syslog server.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetwork": {
+   "properties": {
+    "config": {
+     "$ref": "#/definitions/SystemNetworkConfig"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemNetworkState"
+    }
+   },
+   "title": "SystemNetwork defines a struct to hold the three types of supported network configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkBond": {
+   "properties": {
+    "addresses": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Addresses"
+    },
+    "bridge": {
+     "$ref": "#/definitions/SystemNetworkBridge"
+    },
+    "ethernet": {
+     "$ref": "#/definitions/SystemNetworkEthernet"
+    },
+    "firewall_rules": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkFirewallRule"
+     },
+     "type": "array",
+     "x-go-name": "FirewallRules"
+    },
+    "hwaddr": {
+     "type": "string",
+     "x-go-name": "Hwaddr"
+    },
+    "lldp": {
+     "type": "boolean",
+     "x-go-name": "LLDP"
+    },
+    "members": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Members"
+    },
+    "mode": {
+     "type": "string",
+     "x-go-name": "Mode"
+    },
+    "mtu": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "MTU"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "options": {
+     "$ref": "#/definitions/SystemNetworkBondOptions"
+    },
+    "required_for_online": {
+     "type": "string",
+     "x-go-name": "RequiredForOnline"
+    },
+    "roles": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Roles"
+    },
+    "routes": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkRoute"
+     },
+     "type": "array",
+     "x-go-name": "Routes"
+    },
+    "vlan_tags": {
+     "items": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "type": "array",
+     "x-go-name": "VLANTags"
+    }
+   },
+   "title": "SystemNetworkBond contains information about a network bond.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkBondOptions": {
+   "properties": {
+    "arp_interval": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "ARPInterval"
+    },
+    "arp_ip_targets": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "ARPIPTargets"
+    },
+    "down_delay": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "DownDelay"
+    },
+    "lacp_rate": {
+     "type": "string",
+     "x-go-name": "LACPRate"
+    },
+    "mii_monitor_interval": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "MIIMonitorInterval"
+    },
+    "transmit_hash_policy": {
+     "type": "string",
+     "x-go-name": "TransmitHashPolicy"
+    },
+    "up_delay": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "UpDelay"
+    }
+   },
+   "title": "SystemNetworkBondOptions contains link monitoring and tuning options for a network bond.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkBridge": {
+   "properties": {
+    "disable_multicast_snooping": {
+     "type": "boolean",
+     "x-go-name": "DisableMulticastSnooping"
+    },
+    "stp": {
+     "type": "boolean",
+     "x-go-name": "STP"
+    }
+   },
+   "title": "SystemNetworkBridge contains configuration for the bridge that is automatically created on top of an interface or bond.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkConfig": {
+   "properties": {
+    "bonds": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkBond"
+     },
+     "type": "array",
+     "x-go-name": "Bonds"
+    },
+    "confirmation_timeout": {
+     "description": "If defined, automatically roll back the new network changes after the\nspecified timeout has elapsed unless those changes are confirmed before then.",
+     "type": "string",
+     "x-go-name": "ConfirmationTimeout"
+    },
+    "default_confirmation_timeout": {
+     "description": "If defined and no confirmation timeout provided, automatically roll\nback the new network changes after the specified timeout has elapsed unless those\nchanges are confirmed before then.",
+     "type": "string",
+     "x-go-name": "DefaultConfirmationTimeout"
+    },
+    "dns": {
+     "$ref": "#/definitions/SystemNetworkDNS"
+    },
+    "interfaces": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkInterface"
+     },
+     "type": "array",
+     "x-go-name": "Interfaces"
+    },
+    "proxy": {
+     "$ref": "#/definitions/SystemNetworkProxy"
+    },
+    "time": {
+     "$ref": "#/definitions/SystemNetworkTime"
+    },
+    "vlans": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkVLAN"
+     },
+     "type": "array",
+     "x-go-name": "VLANs"
+    },
+    "wireguard": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkWireguard"
+     },
+     "type": "array",
+     "x-go-name": "Wireguard"
+    }
+   },
+   "title": "SystemNetworkConfig represents the user modifiable network configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkDNS": {
+   "properties": {
+    "dns_over_tls": {
+     "type": "boolean",
+     "x-go-name": "DNSOverTLS"
+    },
+    "domain": {
+     "type": "string",
+     "x-go-name": "Domain"
+    },
+    "hostname": {
+     "type": "string",
+     "x-go-name": "Hostname"
+    },
+    "nameservers": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Nameservers"
+    },
+    "search_domains": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "SearchDomains"
+    }
+   },
+   "title": "SystemNetworkDNS defines DNS configuration options.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkEthernet": {
+   "properties": {
+    "disable_energy_efficient": {
+     "type": "boolean",
+     "x-go-name": "DisableEnergyEfficient"
+    },
+    "disable_gro": {
+     "type": "boolean",
+     "x-go-name": "DisableGRO"
+    },
+    "disable_gso": {
+     "type": "boolean",
+     "x-go-name": "DisableGSO"
+    },
+    "disable_ipv4_tso": {
+     "type": "boolean",
+     "x-go-name": "DisableIPv4TSO"
+    },
+    "disable_ipv6_tso": {
+     "type": "boolean",
+     "x-go-name": "DisableIPv6TSO"
+    },
+    "rx_buffer_size": {
+     "type": "string",
+     "x-go-name": "RxBufferSize"
+    },
+    "rx_jumbo_buffer_size": {
+     "type": "string",
+     "x-go-name": "RxJumboBufferSize"
+    },
+    "rx_mini_buffer_size": {
+     "type": "string",
+     "x-go-name": "RxMiniBufferSize"
+    },
+    "tx_buffer_size": {
+     "type": "string",
+     "x-go-name": "TxBufferSize"
+    },
+    "wakeonlan": {
+     "type": "boolean",
+     "x-go-name": "WakeOnLAN"
+    },
+    "wakeonlan_modes": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "WakeOnLANModes"
+    },
+    "wakeonlan_password": {
+     "type": "string",
+     "x-go-name": "WakeOnLANPassword"
+    }
+   },
+   "title": "SystemNetworkEthernet contains Ethernet-specific configuration details (offloading and other features).",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkFirewallRule": {
+   "properties": {
+    "action": {
+     "type": "string",
+     "x-go-name": "Action"
+    },
+    "port": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "Port"
+    },
+    "protocol": {
+     "type": "string",
+     "x-go-name": "Protocol"
+    },
+    "source": {
+     "type": "string",
+     "x-go-name": "Source"
+    }
+   },
+   "title": "SystemNetworkFirewallRule defines a firewall rule.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkInterface": {
+   "properties": {
+    "addresses": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Addresses"
+    },
+    "bridge": {
+     "$ref": "#/definitions/SystemNetworkBridge"
+    },
+    "ethernet": {
+     "$ref": "#/definitions/SystemNetworkEthernet"
+    },
+    "firewall_rules": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkFirewallRule"
+     },
+     "type": "array",
+     "x-go-name": "FirewallRules"
+    },
+    "hwaddr": {
+     "type": "string",
+     "x-go-name": "Hwaddr"
+    },
+    "lldp": {
+     "type": "boolean",
+     "x-go-name": "LLDP"
+    },
+    "mtu": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "MTU"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "required_for_online": {
+     "type": "string",
+     "x-go-name": "RequiredForOnline"
+    },
+    "roles": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Roles"
+    },
+    "routes": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkRoute"
+     },
+     "type": "array",
+     "x-go-name": "Routes"
+    },
+    "strict_hwaddr": {
+     "type": "boolean",
+     "x-go-name": "StrictHwaddr"
+    },
+    "vlan_tags": {
+     "items": {
+      "format": "int64",
+      "type": "integer"
+     },
+     "type": "array",
+     "x-go-name": "VLANTags"
+    }
+   },
+   "title": "SystemNetworkInterface contains information about a network interface.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkInterfaceState": {
+   "properties": {
+    "addresses": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Addresses"
+    },
+    "hwaddr": {
+     "type": "string",
+     "x-go-name": "Hwaddr"
+    },
+    "lacp": {
+     "$ref": "#/definitions/SystemNetworkLACPState"
+    },
+    "lldp": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkLLDPState"
+     },
+     "type": "array",
+     "x-go-name": "LLDP"
+    },
+    "members": {
+     "additionalProperties": {
+      "$ref": "#/definitions/SystemNetworkInterfaceState"
+     },
+     "type": "object",
+     "x-go-name": "Members"
+    },
+    "mtu": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "MTU"
+    },
+    "roles": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Roles"
+    },
+    "routes": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkRoute"
+     },
+     "type": "array",
+     "x-go-name": "Routes"
+    },
+    "speed": {
+     "type": "string",
+     "x-go-name": "Speed"
+    },
+    "state": {
+     "type": "string",
+     "x-go-name": "State"
+    },
+    "stats": {
+     "$ref": "#/definitions/SystemNetworkInterfaceStats"
+    },
+    "type": {
+     "type": "string",
+     "x-go-name": "Type"
+    },
+    "wireguard": {
+     "$ref": "#/definitions/SystemNetworkWireguardState"
+    }
+   },
+   "title": "SystemNetworkInterfaceState holds state information about a specific network interface.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkInterfaceStats": {
+   "properties": {
+    "rx_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "RXBytes"
+    },
+    "rx_errors": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "RXErrors"
+    },
+    "tx_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "TXBytes"
+    },
+    "tx_errors": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "TXErrors"
+    }
+   },
+   "title": "SystemNetworkInterfaceStats holds RX/TX stats for an interface.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkLACPState": {
+   "properties": {
+    "local_mac": {
+     "type": "string",
+     "x-go-name": "LocalMAC"
+    },
+    "remote_mac": {
+     "type": "string",
+     "x-go-name": "RemoteMAC"
+    }
+   },
+   "title": "SystemNetworkLACPState holds information about a bond's LACP state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkLLDPState": {
+   "properties": {
+    "chassis_id": {
+     "type": "string",
+     "x-go-name": "ChassisID"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "port": {
+     "type": "string",
+     "x-go-name": "Port"
+    },
+    "port_id": {
+     "type": "string",
+     "x-go-name": "PortID"
+    }
+   },
+   "title": "SystemNetworkLLDPState holds information about the LLDP state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkProxy": {
+   "properties": {
+    "rules": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkProxyRule"
+     },
+     "type": "array",
+     "x-go-name": "Rules"
+    },
+    "servers": {
+     "additionalProperties": {
+      "$ref": "#/definitions/SystemNetworkProxyServer"
+     },
+     "type": "object",
+     "x-go-name": "Servers"
+    }
+   },
+   "title": "SystemNetworkProxy defines proxy configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkProxyRule": {
+   "properties": {
+    "destination": {
+     "type": "string",
+     "x-go-name": "Destination"
+    },
+    "target": {
+     "type": "string",
+     "x-go-name": "Target"
+    }
+   },
+   "title": "SystemNetworkProxyRule defines a proxy rule.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkProxyServer": {
+   "properties": {
+    "auth": {
+     "type": "string",
+     "x-go-name": "Auth"
+    },
+    "host": {
+     "type": "string",
+     "x-go-name": "Host"
+    },
+    "password": {
+     "type": "string",
+     "x-go-name": "Password"
+    },
+    "realm": {
+     "type": "string",
+     "x-go-name": "Realm"
+    },
+    "use_tls": {
+     "type": "boolean",
+     "x-go-name": "UseTLS"
+    },
+    "username": {
+     "type": "string",
+     "x-go-name": "Username"
+    }
+   },
+   "title": "SystemNetworkProxyServer defines a proxy server configuration.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkRoute": {
+   "properties": {
+    "onlink": {
+     "type": "boolean",
+     "x-go-name": "OnLink"
+    },
+    "to": {
+     "type": "string",
+     "x-go-name": "To"
+    },
+    "via": {
+     "type": "string",
+     "x-go-name": "Via"
+    }
+   },
+   "title": "SystemNetworkRoute defines a route.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkState": {
+   "properties": {
+    "configuration_in_process": {
+     "type": "boolean",
+     "x-go-name": "ConfigurationInProcess"
+    },
+    "interfaces": {
+     "additionalProperties": {
+      "$ref": "#/definitions/SystemNetworkInterfaceState"
+     },
+     "type": "object",
+     "x-go-name": "Interfaces"
+    }
+   },
+   "title": "SystemNetworkState holds information about the current network state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkTime": {
+   "properties": {
+    "ntp_servers": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "NTPServers"
+    },
+    "timezone": {
+     "type": "string",
+     "x-go-name": "Timezone"
+    }
+   },
+   "title": "SystemNetworkTime defines various time related configuration options (NTP servers, timezone, etc).",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkVLAN": {
+   "properties": {
+    "addresses": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Addresses"
+    },
+    "firewall_rules": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkFirewallRule"
+     },
+     "type": "array",
+     "x-go-name": "FirewallRules"
+    },
+    "id": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "ID"
+    },
+    "mtu": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "MTU"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "parent": {
+     "type": "string",
+     "x-go-name": "Parent"
+    },
+    "required_for_online": {
+     "type": "string",
+     "x-go-name": "RequiredForOnline"
+    },
+    "roles": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Roles"
+    },
+    "routes": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkRoute"
+     },
+     "type": "array",
+     "x-go-name": "Routes"
+    }
+   },
+   "title": "SystemNetworkVLAN contains information about a network vlan.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkWireguard": {
+   "properties": {
+    "addresses": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Addresses"
+    },
+    "firewall_rules": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkFirewallRule"
+     },
+     "type": "array",
+     "x-go-name": "FirewallRules"
+    },
+    "mtu": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "MTU"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "peers": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkWireguardPeer"
+     },
+     "type": "array",
+     "x-go-name": "Peers"
+    },
+    "port": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "Port"
+    },
+    "private_key": {
+     "type": "string",
+     "x-go-name": "PrivateKey"
+    },
+    "required_for_online": {
+     "type": "string",
+     "x-go-name": "RequiredForOnline"
+    },
+    "roles": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Roles"
+    },
+    "routes": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkRoute"
+     },
+     "type": "array",
+     "x-go-name": "Routes"
+    }
+   },
+   "title": "SystemNetworkWireguard contains information about a wireguard interface.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkWireguardPeer": {
+   "properties": {
+    "allowed_ips": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "AllowedIPs"
+    },
+    "endpoint": {
+     "type": "string",
+     "x-go-name": "Endpoint"
+    },
+    "persistent_keepalive": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "PersistentKeepalive"
+    },
+    "preshared_key": {
+     "type": "string",
+     "x-go-name": "PresharedKey"
+    },
+    "public_key": {
+     "type": "string",
+     "x-go-name": "PublicKey"
+    }
+   },
+   "title": "SystemNetworkWireguardPeer defines wireguard peer.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkWireguardPeerState": {
+   "properties": {
+    "allowed_ips": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "AllowedIPs"
+    },
+    "endpoint": {
+     "type": "string",
+     "x-go-name": "EndPoint"
+    },
+    "latest_handshake": {
+     "type": "string",
+     "x-go-name": "LatestHandshake"
+    },
+    "persistent_keepalive": {
+     "type": "string",
+     "x-go-name": "PersistentKeepalive"
+    },
+    "public_key": {
+     "type": "string",
+     "x-go-name": "PublicKey"
+    },
+    "stats": {
+     "$ref": "#/definitions/SystemNetworkInterfaceStats"
+    }
+   },
+   "title": "SystemNetworkWireguardPeerState holds state information about a specific wireguard peer.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemNetworkWireguardState": {
+   "properties": {
+    "listening_port": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "ListeningPort"
+    },
+    "peers": {
+     "items": {
+      "$ref": "#/definitions/SystemNetworkWireguardPeerState"
+     },
+     "type": "array",
+     "x-go-name": "Peers"
+    },
+    "public_key": {
+     "type": "string",
+     "x-go-name": "PublicKey"
+    }
+   },
+   "title": "SystemNetworkWireguardState holds state information about a specific wireguard interface.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemProvider": {
+   "properties": {
+    "config": {
+     "$ref": "#/definitions/SystemProviderConfig"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemProviderState"
+    }
+   },
+   "title": "SystemProvider defines a struct to hold information about the system's update and configuration provider.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemProviderConfig": {
+   "properties": {
+    "config": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "type": "object",
+     "x-go-name": "Config"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    }
+   },
+   "title": "SystemProviderConfig holds the modifiable part of the provider data.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemProviderState": {
+   "properties": {
+    "registered": {
+     "type": "boolean",
+     "x-go-name": "Registered"
+    }
+   },
+   "title": "SystemProviderState holds information about the current provider state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemSecurity": {
+   "properties": {
+    "config": {
+     "$ref": "#/definitions/SystemSecurityConfig"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemSecurityState"
+    }
+   },
+   "title": "SystemSecurity defines a struct to hold information about the system's security state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemSecurityConfig": {
+   "properties": {
+    "custom_ca_certs": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "CustomCACerts"
+    },
+    "encryption_recovery_keys": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "EncryptionRecoveryKeys"
+    }
+   },
+   "title": "SystemSecurityConfig holds additional security configuration settings.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemSecurityEncryptedVolume": {
+   "properties": {
+    "state": {
+     "type": "string",
+     "x-go-name": "State"
+    },
+    "volume": {
+     "type": "string",
+     "x-go-name": "Volume"
+    }
+   },
+   "title": "SystemSecurityEncryptedVolume defines a struct that holds basic information about an encrypted volume.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemSecuritySecureBootCertificate": {
+   "properties": {
+    "fingerprint": {
+     "type": "string",
+     "x-go-name": "Fingerprint"
+    },
+    "issuer": {
+     "type": "string",
+     "x-go-name": "Issuer"
+    },
+    "subject": {
+     "type": "string",
+     "x-go-name": "Subject"
+    },
+    "type": {
+     "type": "string",
+     "x-go-name": "Type"
+    }
+   },
+   "title": "SystemSecuritySecureBootCertificate defines a struct that holds information about Secure Boot keys present on the host.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemSecurityState": {
+   "properties": {
+    "drive_recovery_keys": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "type": "object",
+     "x-go-name": "DriveRecoveryKeys"
+    },
+    "encrypted_volumes": {
+     "items": {
+      "$ref": "#/definitions/SystemSecurityEncryptedVolume"
+     },
+     "type": "array",
+     "x-go-name": "EncryptedVolumes"
+    },
+    "encryption_recovery_keys_retrieved": {
+     "type": "boolean",
+     "x-go-name": "EncryptionRecoveryKeysRetrieved"
+    },
+    "pool_recovery_keys": {
+     "additionalProperties": {
+      "type": "string"
+     },
+     "type": "object",
+     "x-go-name": "PoolRecoveryKeys"
+    },
+    "secure_boot_certificates": {
+     "items": {
+      "$ref": "#/definitions/SystemSecuritySecureBootCertificate"
+     },
+     "type": "array",
+     "x-go-name": "SecureBootCertificates"
+    },
+    "secure_boot_enabled": {
+     "type": "boolean",
+     "x-go-name": "SecureBootEnabled"
+    },
+    "system_state_is_trusted": {
+     "type": "boolean",
+     "x-go-name": "SystemStateIsTrusted"
+    },
+    "system_state_status": {
+     "type": "string",
+     "x-go-name": "SystemStateStatus"
+    },
+    "tpm_public_key": {
+     "type": "string",
+     "x-go-name": "TPMPublicKey"
+    },
+    "tpm_status": {
+     "$ref": "#/definitions/TPMStatus"
+    }
+   },
+   "title": "SystemSecurityState holds information about the current security state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorage": {
+   "properties": {
+    "config": {
+     "$ref": "#/definitions/SystemStorageConfig"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemStorageState"
+    }
+   },
+   "title": "SystemStorage defines a struct to hold information about the system's local storage.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorageConfig": {
+   "properties": {
+    "pools": {
+     "items": {
+      "$ref": "#/definitions/SystemStoragePool"
+     },
+     "type": "array",
+     "x-go-name": "Pools"
+    },
+    "scrub_schedule": {
+     "type": "string",
+     "x-go-name": "ScrubSchedule"
+    },
+    "trim_schedule": {
+     "type": "string",
+     "x-go-name": "TrimSchedule"
+    }
+   },
+   "title": "SystemStorageConfig represents additional configuration for the system's local storage.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorageDrive": {
+   "properties": {
+    "boot": {
+     "type": "boolean",
+     "x-go-name": "Boot"
+    },
+    "bus": {
+     "type": "string",
+     "x-go-name": "Bus"
+    },
+    "capacity_in_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "CapacityInBytes"
+    },
+    "encrypted": {
+     "type": "boolean",
+     "x-go-name": "Encrypted"
+    },
+    "encrypted_id": {
+     "type": "string",
+     "x-go-name": "EncryptedID"
+    },
+    "id": {
+     "type": "string",
+     "x-go-name": "ID"
+    },
+    "member_pool": {
+     "type": "string",
+     "x-go-name": "MemberPool"
+    },
+    "model_family": {
+     "type": "string",
+     "x-go-name": "ModelFamily"
+    },
+    "model_name": {
+     "type": "string",
+     "x-go-name": "ModelName"
+    },
+    "multipath": {
+     "type": "boolean",
+     "x-go-name": "Multipath"
+    },
+    "remote": {
+     "type": "boolean",
+     "x-go-name": "Remote"
+    },
+    "removable": {
+     "type": "boolean",
+     "x-go-name": "Removable"
+    },
+    "serial_number": {
+     "type": "string",
+     "x-go-name": "SerialNumber"
+    },
+    "smart": {
+     "$ref": "#/definitions/SystemStorageDriveSMART"
+    },
+    "wwn": {
+     "type": "string",
+     "x-go-name": "WWN"
+    },
+    "wwn_id": {
+     "type": "string",
+     "x-go-name": "WWNID"
+    }
+   },
+   "title": "SystemStorageDrive defines a struct that holds information about a specific drive.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorageDriveSMART": {
+   "properties": {
+    "available_spare": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "AvailableSpare"
+    },
+    "data_units_read": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "DataUnitsRead"
+    },
+    "data_units_written": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "DataUnitsWritten"
+    },
+    "enabled": {
+     "type": "boolean",
+     "x-go-name": "Enabled"
+    },
+    "error": {
+     "type": "string",
+     "x-go-name": "Error"
+    },
+    "passed": {
+     "type": "boolean",
+     "x-go-name": "Passed"
+    },
+    "percentage_used": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "PercentageUsed"
+    },
+    "power_on_hours": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "PowerOnHours"
+    },
+    "raw_read_error_rate": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "RawReadErrorRate"
+    },
+    "reallocated_sectors": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "ReallocatedSectors"
+    },
+    "seek_error_rate": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "SeekErrorRate"
+    },
+    "temperature_celsius": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "TemperatureCelsius"
+    }
+   },
+   "title": "SystemStorageDriveSMART defines a struct to return basic SMART information about a specific device.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorageEncrypt": {
+   "properties": {
+    "id": {
+     "type": "string",
+     "x-go-name": "ID"
+    },
+    "secure_wipe": {
+     "type": "boolean",
+     "x-go-name": "SecureWipe"
+    }
+   },
+   "title": "SystemStorageEncrypt defines a struct with information about what drive to encrypt.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorageImportEncryptedDrive": {
+   "properties": {
+    "id": {
+     "type": "string",
+     "x-go-name": "ID"
+    },
+    "key": {
+     "type": "string",
+     "x-go-name": "Key"
+    }
+   },
+   "title": "SystemStorageImportEncryptedDrive defines a struct with information about what drive to decrypt.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStoragePool": {
+   "properties": {
+    "alignment": {
+     "description": "Optionally, configure the sector alignment size for the pool; defaults to 4096 byte sectors.\nMust be a power of two. Can only be specified when initially creating the pool.",
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "Alignment"
+    },
+    "allow_mixed_dev_sizes": {
+     "description": "If true, allow creation of a pool with devices of different sizes.",
+     "type": "boolean",
+     "x-go-name": "AllowMixedDevSizes"
+    },
+    "cache": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Cache"
+    },
+    "cache_degraded": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "CacheDegraded"
+    },
+    "devices": {
+     "description": "Devices, Cache, Log, and Special can be modified to add/remove/replace devices in the pool.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Devices"
+    },
+    "devices_degraded": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "DevicesDegraded"
+    },
+    "encryption_key_status": {
+     "type": "string",
+     "x-go-name": "EncryptionKeyStatus"
+    },
+    "last_scrub": {
+     "$ref": "#/definitions/SystemStoragePoolScrubStatus"
+    },
+    "last_trim": {
+     "$ref": "#/definitions/SystemStoragePoolTrimStatus"
+    },
+    "log": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Log"
+    },
+    "log_degraded": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "LogDegraded"
+    },
+    "managed": {
+     "description": "Read-only fields returned from the server with additional pool information.",
+     "type": "boolean",
+     "x-go-name": "Managed"
+    },
+    "name": {
+     "description": "Name and Type cannot be changed after pool creation.",
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "pool_allocated_space_in_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "PoolAllocatedSpaceInBytes"
+    },
+    "raw_pool_size_in_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "RawPoolSizeInBytes"
+    },
+    "special": {
+     "$ref": "#/definitions/SystemStoragePoolSpecial"
+    },
+    "special_degraded": {
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "SpecialDegraded"
+    },
+    "state": {
+     "type": "string",
+     "x-go-name": "State"
+    },
+    "type": {
+     "description": "Supported pool types: zfs-raid0, zfs-raid1, zfs-raid10, zfs-raidz1, zfs-raidz2, zfs-raidz3.",
+     "type": "string",
+     "x-go-name": "Type"
+    },
+    "usable_pool_size_in_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "UsablePoolSizeInBytes"
+    },
+    "volumes": {
+     "items": {
+      "$ref": "#/definitions/SystemStoragePoolVolume"
+     },
+     "type": "array",
+     "x-go-name": "Volumes"
+    }
+   },
+   "title": "SystemStoragePool defines a struct that is used to create or update a storage pool and return its current state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStoragePoolKey": {
+   "description": "Currently the only supported type is \"zfs\".",
+   "properties": {
+    "encryption_key": {
+     "type": "string",
+     "x-go-name": "EncryptionKey"
+    },
+    "force": {
+     "type": "boolean",
+     "x-go-name": "Force"
+    },
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "type": {
+     "type": "string",
+     "x-go-name": "Type"
+    }
+   },
+   "title": "SystemStoragePoolKey defines a struct used to provide an encryption key when importing an existing pool.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStoragePoolScrubState": {
+   "title": "SystemStoragePoolScrubState represents the state of a scan in a pool.",
+   "type": "string",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStoragePoolScrubStatus": {
+   "properties": {
+    "end_time": {
+     "format": "date-time",
+     "type": "string",
+     "x-go-name": "EndTime"
+    },
+    "errors": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "Errors"
+    },
+    "progress": {
+     "type": "string",
+     "x-go-name": "Progress"
+    },
+    "start_time": {
+     "format": "date-time",
+     "type": "string",
+     "x-go-name": "StartTime"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemStoragePoolScrubState"
+    }
+   },
+   "title": "SystemStoragePoolScrubStatus represents the status of a scrub in a pool.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStoragePoolSpecial": {
+   "properties": {
+    "devices": {
+     "description": "One or more physical devices to create the pool's special vdev.",
+     "items": {
+      "type": "string"
+     },
+     "type": "array",
+     "x-go-name": "Devices"
+    },
+    "special_small_blocks_size_in_kb": {
+     "description": "If non-zero, will be used when setting the pool's special_small_blocks property.",
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "SpecialSmallBlocksSizeInKB"
+    },
+    "type": {
+     "description": "Supported special device types: zfs-raid0, zfs-raid1, zfs-raid10, zfs-raidz1, zfs-raidz2, zfs-raidz3.",
+     "type": "string",
+     "x-go-name": "Type"
+    }
+   },
+   "title": "SystemStoragePoolSpecial defines a struct that is used to create or update a pool's special vdev.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStoragePoolTrimState": {
+   "title": "SystemStoragePoolTrimState represents the state of a trim in a pool.",
+   "type": "string",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStoragePoolTrimStatus": {
+   "properties": {
+    "errors": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "Errors"
+    },
+    "last_action_time": {
+     "format": "date-time",
+     "type": "string",
+     "x-go-name": "LastActionTime"
+    },
+    "progress": {
+     "type": "string",
+     "x-go-name": "Progress"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemStoragePoolTrimState"
+    }
+   },
+   "title": "SystemStoragePoolTrimStatus represents the status of a trim in a pool.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStoragePoolVolume": {
+   "properties": {
+    "name": {
+     "type": "string",
+     "x-go-name": "Name"
+    },
+    "quota_in_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "QuotaInBytes"
+    },
+    "usage_in_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "UsageInBytes"
+    },
+    "use": {
+     "type": "string",
+     "x-go-name": "Use"
+    }
+   },
+   "title": "SystemStoragePoolVolume represents a single IncusOS-managed volume in a pool.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorageRootPartition": {
+   "properties": {
+    "available_in_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "AvailableInBytes"
+    },
+    "size_in_bytes": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "SizeInBytes"
+    }
+   },
+   "title": "SystemStorageRootPartition defines a struct that holds usage information about the root (\"/\") partition.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorageState": {
+   "properties": {
+    "drives": {
+     "items": {
+      "$ref": "#/definitions/SystemStorageDrive"
+     },
+     "type": "array",
+     "x-go-name": "Drives"
+    },
+    "root_partition": {
+     "$ref": "#/definitions/SystemStorageRootPartition"
+    }
+   },
+   "title": "SystemStorageState represents additional state for the system's local storage.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemStorageWipe": {
+   "properties": {
+    "id": {
+     "type": "string",
+     "x-go-name": "ID"
+    },
+    "secure_wipe": {
+     "type": "boolean",
+     "x-go-name": "SecureWipe"
+    }
+   },
+   "title": "SystemStorageWipe defines a struct with information about what drive to wipe.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemUpdate": {
+   "properties": {
+    "config": {
+     "$ref": "#/definitions/SystemUpdateConfig"
+    },
+    "state": {
+     "$ref": "#/definitions/SystemUpdateState"
+    }
+   },
+   "title": "SystemUpdate defines a struct to hold information about the system's update policy.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemUpdateConfig": {
+   "properties": {
+    "auto_reboot": {
+     "type": "boolean",
+     "x-go-name": "AutoReboot"
+    },
+    "channel": {
+     "type": "string",
+     "x-go-name": "Channel"
+    },
+    "check_frequency": {
+     "type": "string",
+     "x-go-name": "CheckFrequency"
+    },
+    "maintenance_windows": {
+     "items": {
+      "$ref": "#/definitions/SystemUpdateMaintenanceWindow"
+     },
+     "type": "array",
+     "x-go-name": "MaintenanceWindows"
+    }
+   },
+   "title": "SystemUpdateConfig defines a struct to hold configuration details for the update checks.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemUpdateMaintenanceWindow": {
+   "description": "StartDayOfWeek and EndDayOfWeek are optional, and if non-zero can be used to limit the migration window to certain day(s).",
+   "properties": {
+    "end_day_of_week": {
+     "$ref": "#/definitions/Weekday"
+    },
+    "end_hour": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "EndHour"
+    },
+    "end_minute": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "EndMinute"
+    },
+    "start_day_of_week": {
+     "$ref": "#/definitions/Weekday"
+    },
+    "start_hour": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "StartHour"
+    },
+    "start_minute": {
+     "format": "int64",
+     "type": "integer",
+     "x-go-name": "StartMinute"
+    }
+   },
+   "title": "SystemUpdateMaintenanceWindow defines a maintenance window for when it is acceptable to check for and apply updates.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "SystemUpdateState": {
+   "properties": {
+    "last_check": {
+     "format": "date-time",
+     "type": "string",
+     "x-go-name": "LastCheck"
+    },
+    "needs_reboot": {
+     "type": "boolean",
+     "x-go-name": "NeedsReboot"
+    },
+    "status": {
+     "type": "string",
+     "x-go-name": "Status"
+    }
+   },
+   "title": "SystemUpdateState holds information about the current update state.",
+   "type": "object",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
+  "TPMStatus": {
+   "title": "TPMStatus defines a custom type for reporting the system's TPM status.",
+   "type": "string",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
+  },
   "Warning": {
    "properties": {
     "count": {
@@ -8633,6 +10741,11 @@
    "title": "WarningPut represents the modifiable fields of a warning.",
    "type": "object",
    "x-go-package": "github.com/lxc/incus/v7/shared/api"
+  },
+  "Weekday": {
+   "description": "Weekday defines our own type. The time package's Weekday doesn't include any way to indicate\nan empty value, which we need.",
+   "type": "string",
+   "x-go-package": "github.com/lxc/incus-os/incus-osd/api"
   }
  },
  "info": {
@@ -8706,17 +10819,17 @@
     "parameters": [
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -8780,10 +10893,10 @@
     "parameters": [
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Server configuration",
@@ -8835,10 +10948,10 @@
     "parameters": [
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Server configuration",
@@ -8889,10 +11002,10 @@
     "parameters": [
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -8906,7 +11019,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/certificates/390fdd27ed5dc2408edc11fe602eafceb6c025ddbad9341dfdcb1056a8dd98b1\",\n  \"/1.0/certificates/22aee3f051f96abe6d7756892eecabf4b4b22e2ba877840a4ca981e9ea54030a\"\n]",
+         "example": [
+          "/1.0/certificates/390fdd27ed5dc2408edc11fe602eafceb6c025ddbad9341dfdcb1056a8dd98b1",
+          "/1.0/certificates/22aee3f051f96abe6d7756892eecabf4b4b22e2ba877840a4ca981e9ea54030a"
+         ],
          "items": {
           "type": "string"
          },
@@ -9271,10 +11387,10 @@
     "parameters": [
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -9504,7 +11620,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/cluster/groups/server01\",\n  \"/1.0/cluster/groups/server02\"\n]",
+         "example": [
+          "/1.0/cluster/groups/server01",
+          "/1.0/cluster/groups/server02"
+         ],
          "items": {
           "type": "string"
          },
@@ -9932,10 +12051,10 @@
     "parameters": [
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -9949,7 +12068,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/cluster/members/server01\",\n  \"/1.0/cluster/members/server02\"\n]",
+         "example": [
+          "/1.0/cluster/members/server01",
+          "/1.0/cluster/members/server02"
+         ],
          "items": {
           "type": "string"
          },
@@ -10434,10 +12556,10 @@
     "parameters": [
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -10504,17 +12626,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Event type(s), comma separated (valid types are logging, operation or lifecycle)",
-      "example": "logging,lifecycle",
       "in": "query",
       "name": "type",
-      "type": "string"
+      "type": "string",
+      "x-example": "logging,lifecycle"
      },
      {
       "description": "Retrieve instances from all projects",
@@ -10553,17 +12675,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve images from all projects",
@@ -10583,7 +12705,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/images/06b86454720d36b20f94e31c6812e05ec51c1b568cf3a8abd273769d213394bb\",\n  \"/1.0/images/084dd79dd1360fd25a2479eb46674c2a5ef3022a40fe03c91ab3603e3402b8e1\"\n]",
+         "example": [
+          "/1.0/images/06b86454720d36b20f94e31c6812e05ec51c1b568cf3a8abd273769d213394bb",
+          "/1.0/images/084dd79dd1360fd25a2479eb46674c2a5ef3022a40fe03c91ab3603e3402b8e1"
+         ],
          "items": {
           "type": "string"
          },
@@ -10638,13 +12763,13 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
-      "description": "Image",
+      "description": "Image (or raw image file)",
       "in": "body",
       "name": "image",
       "schema": {
@@ -10652,75 +12777,53 @@
       }
      },
      {
-      "description": "Raw image file",
-      "in": "body",
-      "name": "raw_image"
-     },
-     {
       "description": "Push secret for server to server communication",
-      "example": "RANDOM-STRING",
       "in": "header",
       "name": "X-Incus-secret",
-      "schema": {
-       "type": "string"
-      }
+      "type": "string",
+      "x-example": "RANDOM-STRING"
      },
      {
       "description": "Expected fingerprint when pushing a raw image",
       "in": "header",
       "name": "X-Incus-fingerprint",
-      "schema": {
-       "type": "string"
-      }
+      "type": "string"
      },
      {
       "description": "List of aliases to assign",
       "in": "header",
+      "items": {
+       "type": "string"
+      },
       "name": "X-Incus-aliases",
-      "schema": {
-       "items": {
-        "type": "string"
-       },
-       "type": "array"
-      }
+      "type": "array"
      },
      {
-      "description": "Descriptive properties",
+      "description": "Descriptive properties (URL encoded)",
       "in": "header",
       "name": "X-Incus-properties",
-      "schema": {
-       "additionalProperties": {
-        "type": "string"
-       },
-       "type": "object"
-      }
+      "type": "string"
      },
      {
       "description": "Whether the image is available to unauthenticated users",
       "in": "header",
       "name": "X-Incus-public",
-      "schema": {
-       "type": "boolean"
-      }
+      "type": "boolean"
      },
      {
       "description": "Original filename of the image",
       "in": "header",
       "name": "X-Incus-filename",
-      "schema": {
-       "type": "string"
-      }
+      "type": "string"
      },
      {
       "description": "List of profiles to use",
       "in": "header",
+      "items": {
+       "type": "string"
+      },
       "name": "X-Incus-profiles",
-      "schema": {
-       "items": {
-        "type": "string"
-       },
-       "type": "array"
-      }
+      "type": "array"
      }
     ],
     "produces": [
@@ -10759,10 +12862,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -10776,7 +12879,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/images/aliases/foo\",\n  \"/1.0/images/aliases/bar1\"\n]",
+         "example": [
+          "/1.0/images/aliases/foo",
+          "/1.0/images/aliases/bar1"
+         ],
          "items": {
           "type": "string"
          },
@@ -10831,10 +12937,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image alias",
@@ -10889,10 +12995,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -10936,10 +13042,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -11010,10 +13116,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image alias configuration",
@@ -11072,10 +13178,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image alias rename request",
@@ -11131,10 +13237,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image alias configuration",
@@ -11192,10 +13298,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -11258,10 +13364,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -11335,10 +13441,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -11382,10 +13488,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -11456,10 +13562,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image configuration",
@@ -11518,10 +13624,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image configuration",
@@ -11579,10 +13685,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -11627,10 +13733,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image push request",
@@ -11685,17 +13791,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Secret token to retrieve a private image",
-      "example": "RANDOM-STRING",
       "in": "query",
       "name": "secret",
-      "type": "string"
+      "type": "string",
+      "x-example": "RANDOM-STRING"
      }
     ],
     "produces": [
@@ -11742,10 +13848,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -11791,10 +13897,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -11840,17 +13946,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Secret token to retrieve a private image",
-      "example": "RANDOM-STRING",
       "in": "query",
       "name": "secret",
-      "type": "string"
+      "type": "string",
+      "x-example": "RANDOM-STRING"
      }
     ],
     "produces": [
@@ -11913,17 +14019,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve images from all projects",
@@ -11943,7 +14049,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/images/06b86454720d36b20f94e31c6812e05ec51c1b568cf3a8abd273769d213394bb\",\n  \"/1.0/images/084dd79dd1360fd25a2479eb46674c2a5ef3022a40fe03c91ab3603e3402b8e1\"\n]",
+         "example": [
+          "/1.0/images/06b86454720d36b20f94e31c6812e05ec51c1b568cf3a8abd273769d213394bb",
+          "/1.0/images/084dd79dd1360fd25a2479eb46674c2a5ef3022a40fe03c91ab3603e3402b8e1"
+         ],
          "items": {
           "type": "string"
          },
@@ -11998,10 +14107,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image",
@@ -12049,17 +14158,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve images from all projects",
@@ -12132,24 +14241,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve images from all projects",
-      "example": "default",
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -12216,17 +14325,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve instances from all projects",
@@ -12246,7 +14355,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/instances/foo\",\n  \"/1.0/instances/bar\"\n]",
+         "example": [
+          "/1.0/instances/foo",
+          "/1.0/instances/bar"
+         ],
          "items": {
           "type": "string"
          },
@@ -12301,30 +14413,25 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member",
-      "example": "default",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
-      "description": "Instance request",
+      "description": "Instance request (or raw backup file)",
       "in": "body",
       "name": "instance",
       "schema": {
        "$ref": "#/definitions/InstancesPost"
       }
-     },
-     {
-      "description": "Raw backup file",
-      "in": "body",
-      "name": "raw_backup"
      }
     ],
     "produces": [
@@ -12364,10 +14471,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "State",
@@ -12421,10 +14528,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -12468,10 +14575,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -12542,10 +14649,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Update request",
@@ -12603,10 +14710,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Migration request",
@@ -12661,10 +14768,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Update request",
@@ -12793,10 +14900,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -12810,7 +14917,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/instances/foo/backups/backup0\",\n  \"/1.0/instances/foo/backups/backup1\"\n]",
+         "example": [
+          "/1.0/instances/foo/backups/backup0",
+          "/1.0/instances/foo/backups/backup1"
+         ],
          "items": {
           "type": "string"
          },
@@ -12872,10 +14982,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Backup request",
@@ -12940,10 +15050,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -12994,10 +15104,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -13075,10 +15185,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Backup rename",
@@ -13139,10 +15249,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -13188,10 +15298,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -13268,10 +15378,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Bitmap request",
@@ -13325,10 +15435,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -13372,10 +15482,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "default": "log",
@@ -13384,10 +15494,10 @@
        "log",
        "vga"
       ],
-      "example": "vga",
       "in": "query",
       "name": "type",
-      "type": "string"
+      "type": "string",
+      "x-example": "vga"
      }
     ],
     "produces": [
@@ -13434,10 +15544,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Console request",
@@ -13491,17 +15601,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Memory dump format",
-      "example": "elf",
       "in": "query",
       "name": "format",
-      "type": "string"
+      "type": "string",
+      "x-example": "elf"
      }
     ],
     "responses": {
@@ -13544,10 +15654,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "State",
@@ -13601,10 +15711,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Exec request",
@@ -13658,26 +15768,24 @@
      },
      {
       "description": "Path to the file",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Perform recursive deletion",
-      "example": true,
       "in": "header",
       "name": "X-Incus-force",
-      "schema": {
-       "type": "boolean"
-      }
+      "type": "boolean",
+      "x-example": true
      }
     ],
     "produces": [
@@ -13721,17 +15829,17 @@
      },
      {
       "description": "Path to the file",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -13743,19 +15851,24 @@
       "description": "Raw file or directory listing",
       "headers": {
        "X-Incus-gid": {
-        "description": "File owner GID"
+        "description": "File owner GID",
+        "type": "integer"
        },
        "X-Incus-mode": {
-        "description": "Mode mask"
+        "description": "Mode mask",
+        "type": "integer"
        },
        "X-Incus-modified": {
-        "description": "Last modified date"
+        "description": "Last modified date",
+        "type": "string"
        },
        "X-Incus-type": {
-        "description": "Type of file (file, symlink or directory)"
+        "description": "Type of file (file, symlink or directory)",
+        "type": "string"
        },
        "X-Incus-uid": {
-        "description": "File owner UID"
+        "description": "File owner UID",
+        "type": "integer"
        }
       }
      },
@@ -13793,17 +15906,17 @@
      },
      {
       "description": "Path to the file",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "responses": {
@@ -13811,19 +15924,24 @@
       "description": "Raw file or directory listing",
       "headers": {
        "X-Incus-gid": {
-        "description": "File owner GID"
+        "description": "File owner GID",
+        "type": "integer"
        },
        "X-Incus-mode": {
-        "description": "Mode mask"
+        "description": "Mode mask",
+        "type": "integer"
        },
        "X-Incus-modified": {
-        "description": "Last modified date"
+        "description": "Last modified date",
+        "type": "string"
        },
        "X-Incus-type": {
-        "description": "Type of file (file, symlink or directory)"
+        "description": "Type of file (file, symlink or directory)",
+        "type": "string"
        },
        "X-Incus-uid": {
-        "description": "File owner UID"
+        "description": "File owner UID",
+        "type": "integer"
        }
       }
      },
@@ -13864,67 +15982,60 @@
      },
      {
       "description": "Path to the file",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Raw file content",
       "in": "body",
-      "name": "raw_file"
+      "name": "raw_file",
+      "schema": {
+       "type": "string"
+      }
      },
      {
       "description": "File owner UID",
-      "example": 1000,
       "in": "header",
       "name": "X-Incus-uid",
-      "schema": {
-       "type": "integer"
-      }
+      "type": "integer",
+      "x-example": 1000
      },
      {
       "description": "File owner GID",
-      "example": 1000,
       "in": "header",
       "name": "X-Incus-gid",
-      "schema": {
-       "type": "integer"
-      }
+      "type": "integer",
+      "x-example": 1000
      },
      {
       "description": "File mode",
-      "example": 420,
       "in": "header",
       "name": "X-Incus-mode",
-      "schema": {
-       "type": "integer"
-      }
+      "type": "integer",
+      "x-example": 420
      },
      {
       "description": "Type of file (file, symlink or directory)",
-      "example": "file",
       "in": "header",
       "name": "X-Incus-type",
-      "schema": {
-       "type": "string"
-      }
+      "type": "string",
+      "x-example": "file"
      },
      {
       "description": "Write mode (overwrite or append)",
-      "example": "overwrite",
       "in": "header",
       "name": "X-Incus-write",
-      "schema": {
-       "type": "string"
-      }
+      "type": "string",
+      "x-example": "overwrite"
      }
     ],
     "produces": [
@@ -13970,10 +16081,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -13987,7 +16098,9 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/instances/foo/logs/lxc.log\"\n]",
+         "example": [
+          "/1.0/instances/foo/logs/lxc.log"
+         ],
          "items": {
           "type": "string"
          },
@@ -14048,10 +16161,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14065,7 +16178,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/instances/foo/logs/exec-output/exec_d0a89537-0617-4ed6-a79b-c2e88a970965.stdout\",\n  \"/1.0/instances/foo/logs/exec-output/exec_d0a89537-0617-4ed6-a79b-c2e88a970965.stderr\",\n]",
+         "example": [
+          "/1.0/instances/foo/logs/exec-output/exec_d0a89537-0617-4ed6-a79b-c2e88a970965.stdout",
+          "/1.0/instances/foo/logs/exec-output/exec_d0a89537-0617-4ed6-a79b-c2e88a970965.stderr"
+         ],
          "items": {
           "type": "string"
          },
@@ -14133,10 +16249,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14187,10 +16303,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14244,10 +16360,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14298,10 +16414,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14348,10 +16464,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14422,10 +16538,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image metadata",
@@ -14484,10 +16600,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Image metadata",
@@ -14545,17 +16661,17 @@
      },
      {
       "description": "Template name",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14599,17 +16715,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Template name",
-      "example": "hostname.tpl",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "hostname.tpl"
      }
     ],
     "produces": [
@@ -14657,22 +16773,25 @@
      },
      {
       "description": "Template name",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Raw file content",
       "in": "body",
-      "name": "raw_file"
+      "name": "raw_file",
+      "schema": {
+       "type": "string"
+      }
      }
     ],
     "produces": [
@@ -14706,7 +16825,7 @@
   },
   "/1.0/instances/{name}/nbd": {
    "get": {
-    "description": "Upgrades the request to an NBD connection exposing all of the instance's block devices.\nEach disk is exported under an NBD export named after its Incus device name.\n\nThis is only available on running virtual machines. For stopped instances, access the disks\nindividually through the storage volume NBD endpoint.\n\nPassing reuse=1 returns an additional connection to an already running NBD session instead of\nstarting a new one. The session is terminated when all of its connections are closed.",
+    "description": "Upgrades the request to an NBD connection exposing the instance's root disk and dependent disks.\nEach disk is exported under an NBD export named after its Incus device name.\n\nThis is only available on running virtual machines. For stopped instances, access the disks\nindividually through the storage volume NBD endpoint.\n\nPassing reuse=1 returns an additional connection to an already running NBD session instead of\nstarting a new one. The session is terminated when all of its connections are closed.",
     "operationId": "instance_nbd_get",
     "parameters": [
      {
@@ -14718,17 +16837,17 @@
      },
      {
       "description": "Whether to connect to an already running NBD session",
-      "example": 1,
       "in": "query",
       "name": "reuse",
-      "type": "integer"
+      "type": "integer",
+      "x-example": 1
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14755,7 +16874,7 @@
       "$ref": "#/responses/InternalServerError"
      }
     },
-    "summary": "Get an NBD connection for all of the instance's disks",
+    "summary": "Get an NBD connection for the instance's root and dependent disks",
     "tags": [
      "instances"
     ]
@@ -14775,10 +16894,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14792,7 +16911,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c\",\n  \"/1.0/instances/foo/nvram/d9bee56e-75dc-49d9-b4d7-b534210f637a\",\n]",
+         "example": [
+          "/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c",
+          "/1.0/instances/foo/nvram/d9bee56e-75dc-49d9-b4d7-b534210f637a"
+         ],
          "items": {
           "type": "string"
          },
@@ -14837,6 +16959,70 @@
     "tags": [
      "instances"
     ]
+   },
+   "patch": {
+    "consumes": [
+     "application/json"
+    ],
+    "description": "This consumes nested objects keyed on GUID, then variable name, deleting the corresponding\nUEFI variables if the objects are `null`, and updating them otherwise.\n\nOnly supported for VMs.",
+    "operationId": "instance_nvram_patch",
+    "parameters": [
+     {
+      "description": "Instance name",
+      "in": "path",
+      "name": "name",
+      "required": true,
+      "type": "string"
+     },
+     {
+      "description": "Project name",
+      "in": "query",
+      "name": "project",
+      "type": "string",
+      "x-example": "default"
+     },
+     {
+      "description": "Load Balancer",
+      "in": "body",
+      "name": "UEFI variables map",
+      "required": true,
+      "schema": {
+       "additionalProperties": {
+        "additionalProperties": {
+         "$ref": "#/definitions/InstanceNVRAMVariablePut"
+        },
+        "description": "Namespaced UEFI variables",
+        "type": "object"
+       },
+       "description": "UEFI variables",
+       "type": "object"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "$ref": "#/responses/EmptySyncResponse"
+     },
+     "400": {
+      "$ref": "#/responses/BadRequest"
+     },
+     "403": {
+      "$ref": "#/responses/Forbidden"
+     },
+     "404": {
+      "$ref": "#/responses/NotFound"
+     },
+     "409": {
+      "$ref": "#/responses/Conflict"
+     },
+     "500": {
+      "$ref": "#/responses/InternalServerError"
+     }
+    },
+    "summary": "Bulk modify NVRAM variables.",
+    "tags": [
+     "instances"
+    ]
    }
   },
   "/1.0/instances/{name}/nvram/{guid}": {
@@ -14860,10 +17046,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -14877,7 +17063,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c/Boot0000\",\n  \"/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c/BootOrder\"\n]",
+         "example": [
+          "/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c/Boot0000",
+          "/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c/BootOrder"
+         ],
          "items": {
           "type": "string"
          },
@@ -14938,25 +17127,26 @@
      },
      {
       "description": "Variable GUID",
-      "example": "8be4df61-93ca-11d2-aa0d-00e098032b8c",
       "in": "path",
       "name": "guid",
       "required": true,
-      "type": "string"
+      "type": "string",
+      "x-example": "8be4df61-93ca-11d2-aa0d-00e098032b8c"
      },
      {
       "description": "Variable name",
-      "example": "BootOrder",
       "in": "path",
       "name": "var",
-      "type": "string"
+      "required": true,
+      "type": "string",
+      "x-example": "BootOrder"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -15000,25 +17190,26 @@
      },
      {
       "description": "Variable GUID",
-      "example": "8be4df61-93ca-11d2-aa0d-00e098032b8c",
       "in": "path",
       "name": "guid",
       "required": true,
-      "type": "string"
+      "type": "string",
+      "x-example": "8be4df61-93ca-11d2-aa0d-00e098032b8c"
      },
      {
       "description": "Variable name",
-      "example": "BootOrder",
       "in": "path",
       "name": "var",
-      "type": "string"
+      "required": true,
+      "type": "string",
+      "x-example": "BootOrder"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -15091,41 +17282,38 @@
      },
      {
       "description": "Variable GUID",
-      "example": "8be4df61-93ca-11d2-aa0d-00e098032b8c",
       "in": "path",
       "name": "guid",
       "required": true,
-      "type": "string"
+      "type": "string",
+      "x-example": "8be4df61-93ca-11d2-aa0d-00e098032b8c"
      },
      {
       "description": "Variable name",
-      "example": "BootOrder",
       "in": "path",
       "name": "var",
-      "type": "string"
+      "required": true,
+      "type": "string",
+      "x-example": "BootOrder"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Raw UEFI variable attributes to set",
       "in": "header",
       "name": "X-Incus-attributes",
-      "schema": {
-       "type": "integer"
-      }
+      "type": "integer"
      },
      {
       "description": "Raw UEFI variable UNIX timestamp (in seconds) to set",
       "in": "header",
       "name": "X-Incus-timestamp",
-      "schema": {
-       "type": "integer"
-      }
+      "type": "integer"
      }
     ],
     "produces": [
@@ -15184,10 +17372,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -15261,10 +17449,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -15285,7 +17473,12 @@
           "type": "array"
          },
          "description": "UEFI variables",
-         "example": "{\n  \"8be4df61-93ca-11d2-aa0d-00e098032b8c\": [\n    \"/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c/Boot0000\",\n    \"/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c/BootOrder\"\n  ]\n}",
+         "example": {
+          "8be4df61-93ca-11d2-aa0d-00e098032b8c": [
+           "/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c/Boot0000",
+           "/1.0/instances/foo/nvram/8be4df61-93ca-11d2-aa0d-00e098032b8c/BootOrder"
+          ]
+         },
          "type": "object"
         },
         "status": {
@@ -15343,10 +17536,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -15427,10 +17620,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Port forwarding request",
@@ -15489,10 +17682,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "InstanceRebuild request",
@@ -15590,10 +17783,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -15607,7 +17800,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/instances/foo/snapshots/snap0\",\n  \"/1.0/instances/foo/snapshots/snap1\"\n]",
+         "example": [
+          "/1.0/instances/foo/snapshots/snap0",
+          "/1.0/instances/foo/snapshots/snap1"
+         ],
          "items": {
           "type": "string"
          },
@@ -15669,10 +17865,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Snapshot request",
@@ -15736,10 +17932,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -15790,10 +17986,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -15871,10 +18067,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Snapshot update",
@@ -15939,10 +18135,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Snapshot migration",
@@ -16004,10 +18200,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Snapshot update",
@@ -16064,10 +18260,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -16214,10 +18410,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "State",
@@ -16271,10 +18467,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -16337,17 +18533,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve instances from all projects",
@@ -16420,17 +18616,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve instances from all projects",
@@ -16498,10 +18694,10 @@
   },
   "/1.0/metadata/configuration": {
    "get": {
-    "description": "Returns the generated metadata configuration in YAML format.",
+    "description": "Returns the generated metadata configuration.",
     "operationId": "metadata_configuration_get",
     "produces": [
-     "text/plain"
+     "application/json"
     ],
     "responses": {
      "200": {
@@ -16510,8 +18706,7 @@
        "description": "Sync response",
        "properties": {
         "metadata": {
-         "description": "The generated metadata configuration",
-         "type": "string"
+         "$ref": "#/definitions/MetadataConfiguration"
         },
         "status": {
          "description": "Status description",
@@ -16549,17 +18744,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -16602,24 +18797,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve network ACLs from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -16633,7 +18828,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/network-acls/foo\",\n  \"/1.0/network-acls/bar\"\n]",
+         "example": [
+          "/1.0/network-acls/foo",
+          "/1.0/network-acls/bar"
+         ],
          "items": {
           "type": "string"
          },
@@ -16688,10 +18886,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "ACL",
@@ -16746,10 +18944,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -16793,10 +18991,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -16867,10 +19065,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "ACL configuration",
@@ -16929,10 +19127,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "ACL rename request",
@@ -16988,10 +19186,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "ACL configuration",
@@ -17049,10 +19247,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -17091,24 +19289,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve network ACLs from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -17175,24 +19373,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve network address sets from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -17206,7 +19404,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/network-address-sets/foo\",\n  \"/1.0/network-address-sets/bar\"\n]",
+         "example": [
+          "/1.0/network-address-sets/foo",
+          "/1.0/network-address-sets/bar"
+         ],
          "items": {
           "type": "string"
          },
@@ -17261,10 +19462,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "address set",
@@ -17319,10 +19520,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -17366,10 +19567,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -17440,10 +19641,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Address set configuration",
@@ -17502,10 +19703,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Address set rename request",
@@ -17561,10 +19762,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Address set configuration",
@@ -17615,24 +19816,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve network address sets from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -17699,10 +19900,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve entities from all projects",
@@ -17774,10 +19975,10 @@
     "parameters": [
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -17791,7 +19992,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/network-integrations/region2\",\n  \"/1.0/network-integrations/region3\"\n]",
+         "example": [
+          "/1.0/network-integrations/region2",
+          "/1.0/network-integrations/region3"
+         ],
          "items": {
           "type": "string"
          },
@@ -18146,10 +20350,10 @@
     "parameters": [
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -18207,24 +20411,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve network zones from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -18238,7 +20442,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/network-zones/example.net\",\n  \"/1.0/network-zones/example.com\"\n]",
+         "example": [
+          "/1.0/network-zones/example.net",
+          "/1.0/network-zones/example.com"
+         ],
          "items": {
           "type": "string"
          },
@@ -18293,10 +20500,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "zone",
@@ -18351,10 +20558,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -18398,10 +20605,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -18472,10 +20679,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "zone configuration",
@@ -18534,10 +20741,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "zone configuration",
@@ -18595,17 +20802,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -18619,7 +20826,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/network-zones/example.net/records/foo\",\n  \"/1.0/network-zones/example.net/records/bar\"\n]",
+         "example": [
+          "/1.0/network-zones/example.net/records/foo",
+          "/1.0/network-zones/example.net/records/bar"
+         ],
          "items": {
           "type": "string"
          },
@@ -18681,10 +20891,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "zone",
@@ -18746,10 +20956,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -18800,10 +21010,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -18881,10 +21091,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "zone record configuration",
@@ -18950,10 +21160,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "zone record configuration",
@@ -19011,17 +21221,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -19088,24 +21298,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve network zones from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -19172,24 +21382,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve networks from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -19203,7 +21413,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/networks/mybr0\",\n  \"/1.0/networks/mybr1\"\n]",
+         "example": [
+          "/1.0/networks/mybr0",
+          "/1.0/networks/mybr1"
+         ],
          "items": {
           "type": "string"
          },
@@ -19258,17 +21471,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Network",
@@ -19323,10 +21536,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -19370,17 +21583,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -19451,17 +21664,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Network configuration",
@@ -19520,10 +21733,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Network rename request",
@@ -19579,17 +21792,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Network configuration",
@@ -19647,17 +21860,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -19731,17 +21944,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -19811,17 +22024,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -19835,7 +22048,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/networks/mybr0/forwards/192.0.2.1\",\n  \"/1.0/networks/mybr0/forwards/192.0.2.2\"\n]",
+         "example": [
+          "/1.0/networks/mybr0/forwards/192.0.2.1",
+          "/1.0/networks/mybr0/forwards/192.0.2.2"
+         ],
          "items": {
           "type": "string"
          },
@@ -19897,10 +22113,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Forward",
@@ -19962,10 +22178,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20016,10 +22232,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20097,10 +22313,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Address forward configuration",
@@ -20166,10 +22382,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Address forward configuration",
@@ -20227,17 +22443,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20311,17 +22527,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20335,7 +22551,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/networks/mybr0/load-balancers/192.0.2.1\",\n  \"/1.0/networks/mybr0/load-balancers/192.0.2.2\"\n]",
+         "example": [
+          "/1.0/networks/mybr0/load-balancers/192.0.2.1",
+          "/1.0/networks/mybr0/load-balancers/192.0.2.2"
+         ],
          "items": {
           "type": "string"
          },
@@ -20397,10 +22616,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Load Balancer",
@@ -20462,10 +22681,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20516,10 +22735,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20597,10 +22816,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Address load balancer configuration",
@@ -20666,10 +22885,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Address load balancer configuration",
@@ -20734,10 +22953,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20807,17 +23026,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20891,17 +23110,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -20915,7 +23134,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/networks/mybr0/peers/my-peer-1\",\n  \"/1.0/networks/mybr0/peers/my-peer-2\"\n]",
+         "example": [
+          "/1.0/networks/mybr0/peers/my-peer-1",
+          "/1.0/networks/mybr0/peers/my-peer-2"
+         ],
          "items": {
           "type": "string"
          },
@@ -20977,10 +23199,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Peer",
@@ -21042,10 +23264,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -21096,10 +23318,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -21177,10 +23399,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Peer configuration",
@@ -21246,10 +23468,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Peer configuration",
@@ -21307,17 +23529,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -21384,24 +23606,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve networks from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -21468,10 +23690,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve operations from all projects",
@@ -21497,7 +23719,11 @@
           "type": "array"
          },
          "description": "JSON object of operation types to operation URLs",
-         "example": "{\n  \"running\": [\n    \"/1.0/operations/6916c8a6-9b7d-4abd-90b3-aedfec7ec7da\"\n  ]\n}",
+         "example": {
+          "running": [
+           "/1.0/operations/6916c8a6-9b7d-4abd-90b3-aedfec7ec7da"
+          ]
+         },
          "type": "object"
         },
         "status": {
@@ -21661,10 +23887,10 @@
      },
      {
       "description": "Timeout in seconds (-1 means never)",
-      "example": -1,
       "in": "query",
       "name": "timeout",
-      "type": "integer"
+      "type": "integer",
+      "x-example": -1
      }
     ],
     "produces": [
@@ -21734,17 +23960,17 @@
      },
      {
       "description": "Authentication token",
-      "example": "random-string",
       "in": "query",
       "name": "secret",
-      "type": "string"
+      "type": "string",
+      "x-example": "random-string"
      },
      {
       "description": "Timeout in seconds (-1 means never)",
-      "example": -1,
       "in": "query",
       "name": "timeout",
-      "type": "integer"
+      "type": "integer",
+      "x-example": -1
      }
     ],
     "produces": [
@@ -21814,10 +24040,10 @@
      },
      {
       "description": "Authentication token",
-      "example": "random-string",
       "in": "query",
       "name": "secret",
-      "type": "string"
+      "type": "string",
+      "x-example": "random-string"
      }
     ],
     "produces": [
@@ -21863,10 +24089,10 @@
      },
      {
       "description": "Authentication token",
-      "example": "random-string",
       "in": "query",
       "name": "secret",
-      "type": "string"
+      "type": "string",
+      "x-example": "random-string"
      }
     ],
     "produces": [
@@ -21905,10 +24131,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve operations from all projects",
@@ -21981,24 +24207,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve profiles from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -22012,7 +24238,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/profiles/default\",\n  \"/1.0/profiles/foo\"\n]",
+         "example": [
+          "/1.0/profiles/default",
+          "/1.0/profiles/foo"
+         ],
          "items": {
           "type": "string"
          },
@@ -22067,10 +24296,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Profile",
@@ -22125,10 +24354,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -22172,10 +24401,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -22246,10 +24475,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Profile configuration",
@@ -22308,10 +24537,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Profile rename request",
@@ -22367,10 +24596,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Profile configuration",
@@ -22421,24 +24650,24 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve profiles from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -22505,10 +24734,10 @@
     "parameters": [
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -22522,7 +24751,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/projects/default\",\n  \"/1.0/projects/foo\"\n]",
+         "example": [
+          "/1.0/projects/default",
+          "/1.0/projects/foo"
+         ],
          "items": {
           "type": "string"
          },
@@ -23027,10 +25259,10 @@
     "parameters": [
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -23097,10 +25329,10 @@
     "parameters": [
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -23163,17 +25395,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -23187,7 +25419,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/local\",\n  \"/1.0/storage-pools/remote\"\n]",
+         "example": [
+          "/1.0/storage-pools/local",
+          "/1.0/storage-pools/remote"
+         ],
          "items": {
           "type": "string"
          },
@@ -23242,17 +25477,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage pool",
@@ -23314,17 +25549,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -23378,17 +25613,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage bucket configuration",
@@ -23454,17 +25689,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage bucket configuration",
@@ -23536,17 +25771,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -23607,17 +25842,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage bucket key configuration",
@@ -23675,10 +25910,10 @@
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -23748,10 +25983,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -23795,17 +26030,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -23876,17 +26111,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage pool configuration",
@@ -23945,17 +26180,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage pool configuration",
@@ -24013,24 +26248,24 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve storage pool buckets from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -24044,7 +26279,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/default/buckets/foo\",\n  \"/1.0/storage-pools/default/buckets/bar\",\n]",
+         "example": [
+          "/1.0/storage-pools/default/buckets/foo",
+          "/1.0/storage-pools/default/buckets/bar"
+         ],
          "items": {
           "type": "string"
          },
@@ -24106,10 +26344,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Bucket",
@@ -24174,10 +26412,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -24254,17 +26492,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -24278,7 +26516,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/local/buckets/foo/backups/backup0\",\n  \"/1.0/storage-pools/local/buckets/foo/backups/backup1\"\n]",
+         "example": [
+          "/1.0/storage-pools/local/buckets/foo/backups/backup0",
+          "/1.0/storage-pools/local/buckets/foo/backups/backup1"
+         ],
          "items": {
           "type": "string"
          },
@@ -24347,17 +26588,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage bucket backup",
@@ -24430,17 +26671,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -24498,17 +26739,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -24593,17 +26834,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage bucket backup",
@@ -24672,17 +26913,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -24735,17 +26976,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -24826,10 +27067,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -24843,7 +27084,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/default/buckets/foo/keys/my-read-only-key\",\n  \"/1.0/storage-pools/default/buckets/bar/keys/admin\",\n]",
+         "example": [
+          "/1.0/storage-pools/default/buckets/foo/keys/my-read-only-key",
+          "/1.0/storage-pools/default/buckets/bar/keys/admin"
+         ],
          "items": {
           "type": "string"
          },
@@ -24912,10 +27156,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Bucket",
@@ -24984,10 +27228,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -25064,10 +27308,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -25148,10 +27392,10 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -25221,24 +27465,24 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve storage pool buckets from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -25312,24 +27556,24 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Retrieve storage pool buckets from all projects",
-      "example": true,
       "in": "query",
       "name": "all-projects",
-      "type": "boolean"
+      "type": "boolean",
+      "x-example": true
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -25403,24 +27647,24 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -25434,7 +27678,12 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/local/volumes/container/a1\",\n  \"/1.0/storage-pools/local/volumes/container/a2\",\n  \"/1.0/storage-pools/local/volumes/custom/backups\",\n  \"/1.0/storage-pools/local/volumes/custom/images\"\n]",
+         "example": [
+          "/1.0/storage-pools/local/volumes/container/a1",
+          "/1.0/storage-pools/local/volumes/container/a2",
+          "/1.0/storage-pools/local/volumes/custom/backups",
+          "/1.0/storage-pools/local/volumes/custom/images"
+         ],
          "items": {
           "type": "string"
          },
@@ -25496,17 +27745,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume",
@@ -25571,17 +27820,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -25595,7 +27844,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/local/volumes/custom/backups\",\n  \"/1.0/storage-pools/local/volumes/custom/images\"\n]",
+         "example": [
+          "/1.0/storage-pools/local/volumes/custom/backups",
+          "/1.0/storage-pools/local/volumes/custom/images"
+         ],
          "items": {
           "type": "string"
          },
@@ -25664,17 +27916,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume",
@@ -25746,17 +27998,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -25814,17 +28066,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -25909,17 +28161,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume configuration",
@@ -25992,17 +28244,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Migration request",
@@ -26074,17 +28326,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume configuration",
@@ -26156,17 +28408,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -26180,7 +28432,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/local/volumes/custom/foo/backups/backup0\",\n  \"/1.0/storage-pools/local/volumes/custom/foo/backups/backup1\"\n]",
+         "example": [
+          "/1.0/storage-pools/local/volumes/custom/foo/backups/backup0",
+          "/1.0/storage-pools/local/volumes/custom/foo/backups/backup1"
+         ],
          "items": {
           "type": "string"
          },
@@ -26256,17 +28511,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume backup",
@@ -26346,17 +28601,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -26421,17 +28676,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -26523,17 +28778,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume backup",
@@ -26541,7 +28796,7 @@
       "name": "volume rename",
       "required": true,
       "schema": {
-       "$ref": "#/definitions/StorageVolumeSnapshotPost"
+       "$ref": "#/definitions/StorageVolumeBackupPost"
       }
      }
     ],
@@ -26609,17 +28864,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -26679,17 +28934,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -26777,17 +29032,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -26801,7 +29056,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/shared/volumes/custom/foo/bitmaps/bitmap0\",\n  \"/1.0/storage-pools/shared/volumes/custom/foo/bitmaps/bitmap1\"\n]",
+         "example": [
+          "/1.0/storage-pools/shared/volumes/custom/foo/bitmaps/bitmap0",
+          "/1.0/storage-pools/shared/volumes/custom/foo/bitmaps/bitmap1"
+         ],
          "items": {
           "type": "string"
          },
@@ -26877,17 +29135,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume bitmap",
@@ -26967,17 +29225,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -27042,17 +29300,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -27136,17 +29394,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -27234,26 +29492,24 @@
      },
      {
       "description": "Path to the file",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Perform recursive deletion",
-      "example": true,
       "in": "header",
       "name": "X-Incus-force",
-      "schema": {
-       "type": "boolean"
-      }
+      "type": "boolean",
+      "x-example": true
      }
     ],
     "produces": [
@@ -27311,17 +29567,17 @@
      },
      {
       "description": "Path to the file",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -27333,19 +29589,24 @@
       "description": "Raw file or directory listing",
       "headers": {
        "X-Incus-gid": {
-        "description": "File owner GID"
+        "description": "File owner GID",
+        "type": "integer"
        },
        "X-Incus-mode": {
-        "description": "Mode mask"
+        "description": "Mode mask",
+        "type": "integer"
        },
        "X-Incus-modified": {
-        "description": "Last modified date"
+        "description": "Last modified date",
+        "type": "string"
        },
        "X-Incus-type": {
-        "description": "Type of file (file, symlink or directory)"
+        "description": "Type of file (file, symlink or directory)",
+        "type": "string"
        },
        "X-Incus-uid": {
-        "description": "File owner UID"
+        "description": "File owner UID",
+        "type": "integer"
        }
       }
      },
@@ -27397,17 +29658,17 @@
      },
      {
       "description": "Path to the file",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "responses": {
@@ -27415,19 +29676,24 @@
       "description": "Raw file or directory listing",
       "headers": {
        "X-Incus-gid": {
-        "description": "File owner GID"
+        "description": "File owner GID",
+        "type": "integer"
        },
        "X-Incus-mode": {
-        "description": "Mode mask"
+        "description": "Mode mask",
+        "type": "integer"
        },
        "X-Incus-modified": {
-        "description": "Last modified date"
+        "description": "Last modified date",
+        "type": "string"
        },
        "X-Incus-type": {
-        "description": "Type of file (file, symlink or directory)"
+        "description": "Type of file (file, symlink or directory)",
+        "type": "string"
        },
        "X-Incus-uid": {
-        "description": "File owner UID"
+        "description": "File owner UID",
+        "type": "integer"
        }
       }
      },
@@ -27482,67 +29748,60 @@
      },
      {
       "description": "Path to the file",
-      "example": "default",
       "in": "query",
       "name": "path",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Raw file content",
       "in": "body",
-      "name": "raw_file"
+      "name": "raw_file",
+      "schema": {
+       "type": "string"
+      }
      },
      {
       "description": "File owner UID",
-      "example": 1000,
       "in": "header",
       "name": "X-Incus-uid",
-      "schema": {
-       "type": "integer"
-      }
+      "type": "integer",
+      "x-example": 1000
      },
      {
       "description": "File owner GID",
-      "example": 1000,
       "in": "header",
       "name": "X-Incus-gid",
-      "schema": {
-       "type": "integer"
-      }
+      "type": "integer",
+      "x-example": 1000
      },
      {
       "description": "File mode",
-      "example": 420,
       "in": "header",
       "name": "X-Incus-mode",
-      "schema": {
-       "type": "integer"
-      }
+      "type": "integer",
+      "x-example": 420
      },
      {
       "description": "Type of file (file, symlink or directory)",
-      "example": "file",
       "in": "header",
       "name": "X-Incus-type",
-      "schema": {
-       "type": "string"
-      }
+      "type": "string",
+      "x-example": "file"
      },
      {
       "description": "Write mode (overwrite or append)",
-      "example": "overwrite",
       "in": "header",
       "name": "X-Incus-write",
-      "schema": {
-       "type": "string"
-      }
+      "type": "string",
+      "x-example": "overwrite"
      }
     ],
     "produces": [
@@ -27602,17 +29861,17 @@
      },
      {
       "description": "Whether to have the volume be writable",
-      "example": 1,
       "in": "query",
       "name": "writable",
-      "type": "integer"
+      "type": "integer",
+      "x-example": 1
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -27676,17 +29935,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume rebuild request",
@@ -27812,17 +30071,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -27836,7 +30095,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/storage-pools/local/volumes/custom/foo/snapshots/snap0\",\n  \"/1.0/storage-pools/local/volumes/custom/foo/snapshots/snap1\"\n]",
+         "example": [
+          "/1.0/storage-pools/local/volumes/custom/foo/snapshots/snap0",
+          "/1.0/storage-pools/local/volumes/custom/foo/snapshots/snap1"
+         ],
          "items": {
           "type": "string"
          },
@@ -27912,17 +30174,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume snapshot",
@@ -28001,17 +30263,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -28076,17 +30338,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -28178,17 +30440,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume snapshot configuration",
@@ -28268,17 +30530,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume snapshot",
@@ -28355,17 +30617,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Storage volume snapshot configuration",
@@ -28437,17 +30699,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -28535,17 +30797,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -28629,17 +30891,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -28716,17 +30978,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -28807,17 +31069,17 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      }
     ],
     "produces": [
@@ -28891,24 +31153,24 @@
      },
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Cluster member name",
-      "example": "server01",
       "in": "query",
       "name": "target",
-      "type": "string"
+      "type": "string",
+      "x-example": "server01"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -28975,17 +31237,17 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      },
      {
       "description": "Collection filter",
-      "example": "default",
       "in": "query",
       "name": "filter",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -29052,10 +31314,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -29069,7 +31331,10 @@
        "properties": {
         "metadata": {
          "description": "List of endpoints",
-         "example": "[\n  \"/1.0/warnings/39c61a48-cc17-40ae-8248-4f7b4cadedf4\",\n  \"/1.0/warnings/951779a5-2820-4d96-b01e-88fe820e5310\"\n]",
+         "example": [
+          "/1.0/warnings/39c61a48-cc17-40ae-8248-4f7b4cadedf4",
+          "/1.0/warnings/951779a5-2820-4d96-b01e-88fe820e5310"
+         ],
          "items": {
           "type": "string"
          },
@@ -29333,10 +31598,10 @@
     "parameters": [
      {
       "description": "Project name",
-      "example": "default",
       "in": "query",
       "name": "project",
-      "type": "string"
+      "type": "string",
+      "x-example": "default"
      }
     ],
     "produces": [
@@ -29659,7 +31924,7 @@
  "swagger": "2.0",
  "x-source": {
   "repo": "lxc/incus",
-  "tag": "v7.3.0",
-  "url": "https://raw.githubusercontent.com/lxc/incus/v7.3.0/doc/rest-api.yaml"
+  "tag": "v7.0.2",
+  "url": "https://raw.githubusercontent.com/lxc/incus/v7.0.2/doc/rest-api.yaml"
  }
 }

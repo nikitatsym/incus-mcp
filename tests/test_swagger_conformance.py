@@ -105,7 +105,7 @@ _QP_WIRE = {"all_projects": "all-projects"}
 # Query names a spec path key may document by carrying them in its own query
 # string. `recursion` is named nowhere else. `?public` is deliberately absent:
 # it disambiguates the untrusted-client operation id (the endpoint carries
-# `AllowUntrusted: true`), and no v7.3.0 handler reads a `public` query param.
+# `AllowUntrusted: true`), and no v7.0.2 handler reads a `public` query param.
 _PROMOTED_KEY_PARAMS = frozenset({"recursion"})
 # Kwargs that carry no name-bearing payload, and ones whose payload is raw
 # bytes rather than a JSON object.
@@ -468,9 +468,9 @@ class _Endpoint:
     query: set[str] = field(default_factory=set)
     query_enums: dict[str, frozenset[str]] = field(default_factory=dict)
     body: set[str] = field(default_factory=set)
-    # A body parameter with no schema is a raw upload: its field names are not
-    # the spec's business, so the body check stands down unless some variant
-    # of the endpoint does declare a schema.
+    # A body parameter with no schema, or a bare string one, is a raw upload:
+    # its field names are not the spec's business, so the body check stands
+    # down unless some variant of the endpoint does declare an object schema.
     body_declared: bool = False
     body_schema: bool = False
 
@@ -525,7 +525,7 @@ class _Spec:
             elif where == "body":
                 endpoint.body_declared = True
                 schema = param.get("schema")
-                if schema:
+                if schema and schema.get("type") != "string":
                     endpoint.body_schema = True
                     endpoint.body |= self._properties(schema)
 
@@ -715,9 +715,9 @@ def _body_finding(ours: frozenset[str] | _Body, allowed: frozenset[str] | None) 
     """Compare the body we send against the one the spec's body param declares.
 
     `allowed is None` marks an endpoint whose body parameter carries no schema
-    - a raw upload. Feeding one a JSON object, or handing bytes to an endpoint
-    that documents a schema, is a wire mismatch even when no field name is
-    readable on our side.
+    or a bare string one - a raw upload. Feeding one a JSON object, or handing
+    bytes to an endpoint that documents an object schema, is a wire mismatch
+    even when no field name is readable on our side.
     """
     if ours is _Body.RAW:
         if allowed is None:

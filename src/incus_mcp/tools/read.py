@@ -46,7 +46,7 @@ from .helpers import (
     _qp,
     _slim_list,
     _tail_filter,
-    _verify_response,
+    _verify_readback,
 )
 
 # ── Version ──────────────────────────────────────────────────────────
@@ -54,7 +54,7 @@ from .helpers import (
 
 @_op(ROOT)
 def incus_version() -> dict[str, Any]:
-    """Get the Incus MCP server version and service status."""
+    """Get the incus-mcp package version, the Incus server version and its API version."""
     from importlib.metadata import version
 
     server = _get_client().check()
@@ -63,6 +63,7 @@ def incus_version() -> dict[str, Any]:
         "mcp": version("incus-mcp"),
         "server": {
             "environment": env.get("server_name"),
+            "version": env.get("server_version"),
             "api_version": server.get("api_version"),
         },
     }
@@ -1048,7 +1049,7 @@ def wait_operation(id: str) -> OperationDict:
         if entry is not None:
             sent, target_path, target_qp = entry
             target = _get_client().get(target_path, params=target_qp or None)
-            _verify_response(sent, target)
+            _verify_readback(sent, target)
     return cast(OperationDict, result)
 
 
@@ -1128,7 +1129,7 @@ async def _run_drain(handle: _wr.WaitHandle) -> None:
         target = await asyncio.to_thread(
             _get_client().get, target_path, params=target_qp or None,
         )
-        _verify_response(sent, target)
+        _verify_readback(sent, target)
     except ValueError as exc:
         handle.verify_error = str(exc)
     # Also detached: enrichment is best-effort and must never sink the wait.

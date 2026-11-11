@@ -68,17 +68,47 @@ async def test_create_and_wait_container():
         _cleanup(name)
 
 
-@_needs_server
-def test_silent_drop_verify_sync():
-    # Bogus key against a real managed network: the server rejects it
-    # (APIError) or accepts-and-drops it (ValueError from _verify_response) -
-    # either proves no silent success. PATCH (merge), not a full-replace PUT,
-    # so the network's live config is never wiped.
+def _managed_network() -> str:
     managed = [n for n in read.list_networks() if n.get("managed")]
     if not managed:
         pytest.skip("no managed network to target")
-    with pytest.raises((APIError, ValueError)):
-        write.patch_network(name=managed[0]["name"], config={"nonsense.key": "x"})
+    return str(managed[0]["name"])
+
+
+@_needs_server
+def test_silent_drop_verify_sync():
+    # Incus validates network config keys and answers an unknown one with a
+    # 400 before writing anything. PATCH (merge), not a full-replace PUT, so
+    # the network's live config is never wiped.
+    with pytest.raises(APIError) as exc:
+        write.patch_network(name=_managed_network(), config={"nonsense.key": "x"})
+    assert exc.value.status == 400
+
+
+@_needs_server
+def test_valid_sync_write_passes_readback():
+    # Incus answers a sync write with an empty object, so the op has to verify
+    # against the resource read back, not against that answer. Clearing the
+    # key with "" afterwards covers the cleared-value skip.
+    name = _managed_network()
+    write.patch_network(name=name, config={"user.mcp-smoke": "1"})
+    assert read.show_network(name)["config"]["user.mcp-smoke"] == "1"
+    write.patch_network(name=name, config={"user.mcp-smoke": ""})
+    assert "user.mcp-smoke" not in read.show_network(name)["config"]
+
+
+@_needs_server
+def test_silent_drop_caught_by_readback():
+    # Incus ignores JSON names it does not know: an unknown metadata field is
+    # accepted with a 200 and dropped, and only the read-back shows it.
+    name = "mcp-smoke-metadata"
+    _settle(write.create_instance(name=name, source=_SMOKE_SOURCE, type="container"))
+    try:
+        metadata = read.get_instance_metadata(name)
+        with pytest.raises(ValueError, match="bogus_field"):
+            write.update_instance_metadata(name, metadata | {"bogus_field": "x"})
+    finally:
+        _cleanup(name)
 
 
 @_needs_server
@@ -96,7 +126,7 @@ async def test_silent_drop_verify_async():
         # No phantom success: real Incus either fails the operation outright
         # (terminal status_code >= 400) or accepts it and silently drops the
         # bogus key (surfaced post-terminal as verify_error). Both are loud;
-        # Incus 6.0 rejects an unknown config namespace with a 400.
+        # Incus 7.0 rejects an unknown config namespace with a 400.
         failed = bool(snap.get("terminated")) and (snap.get("status_code") or 0) >= 400
         assert failed or snap.get("verify_error") is not None, snap
         if snap.get("verify_error") is not None:

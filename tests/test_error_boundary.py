@@ -147,7 +147,7 @@ def test_root_version_keeps_its_success_shape(stub_client, respx_mock):
             "status_code": 200,
             "metadata": {
                 "api_version": "1.0",
-                "environment": {"server_name": "incus-1"},
+                "environment": {"server_name": "incus-1", "server_version": "7.0.2"},
             },
         },
     )
@@ -157,6 +157,7 @@ def test_root_version_keeps_its_success_shape(stub_client, respx_mock):
     assert isinstance(result, TextContent)
     assert json.loads(result.text)["server"] == {
         "environment": "incus-1",
+        "version": "7.0.2",
         "api_version": "1.0",
     }
 

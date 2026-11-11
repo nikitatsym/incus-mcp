@@ -7,7 +7,7 @@ daemon serves it - so the conformance test reads a pinned copy from
 parser at gate time; the document is otherwise carried through untouched
 apart from the `x-source` provenance block.
 
-    uv run --with pyyaml python scripts/fetch-incus-spec.py v7.3.0
+    uv run --with pyyaml python scripts/fetch-incus-spec.py v7.0.2
 """
 from __future__ import annotations
 

@@ -197,10 +197,11 @@ def delete_volume_backup(pool: str, type: str, volume: str, backup: str) -> Oper
 
 
 @_op(incus_delete)
-def delete_volume_file(pool: str, type: str, volume: str) -> dict[str, Any]:
-    """Delete volume files."""
+def delete_volume_file(pool: str, type: str, volume: str, path: str) -> dict[str, Any]:
+    """Delete a file from a storage volume."""
     return _ok(_get_client().delete(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/files",
+        params=_qp(path=path),
     ))
 
 

@@ -232,9 +232,9 @@ Total: 87
 | `update_project(name, ...)` | `PUT /1.0/projects/{name}` | |
 | `rename_project(name, new_name)` | `POST /1.0/projects/{name}` | |
 | **Cluster** | | |
-| `update_cluster(...)` | `PUT /1.0/cluster` | |
+| `update_cluster(enabled, ...)` | `PUT /1.0/cluster` | `enabled` required; disable refused when not clustered; not verified (disable restarts Incus, enable/join are async) |
 | `update_cluster_certificate(...)` | `PUT /1.0/cluster/certificate` | |
-| `request_join_token(name)` | `POST /1.0/cluster/members` | |
+| `request_join_token(name)` | `POST /1.0/cluster/members` | Returns the token operation; checks its `metadata.serverName` |
 | `update_cluster_member(name, ...)` | `PUT /1.0/cluster/members/{name}` | |
 | `rename_cluster_member(name, new_name)` | `POST /1.0/cluster/members/{name}` | |
 | `create_cluster_group(name, ...)` | `POST /1.0/cluster/groups` | |
@@ -296,7 +296,7 @@ Total: 9
 | `delete_volume(pool, type, volume, project)` | `DELETE /1.0/storage-pools/{pool}/volumes/{type}/{volume}` | |
 | `delete_volume_snapshot(pool, type, volume, snapshot)` | `DELETE ...snapshots/{snapshot}` | |
 | `delete_volume_backup(pool, type, volume, backup)` | `DELETE ...backups/{backup}` | |
-| `delete_volume_file(pool, type, volume)` | `DELETE .../{type}/{volume}/files` | |
+| `delete_volume_file(pool, type, volume, path)` | `DELETE .../{type}/{volume}/files?path=` | |
 | `delete_bucket(pool, bucket)` | `DELETE ...buckets/{bucket}` | |
 | `delete_bucket_key(pool, bucket, key)` | `DELETE ...buckets/{bucket}/keys/{key}` | |
 | `delete_bucket_backup(pool, bucket, backup)` | `DELETE ...buckets/{bucket}/backups/{backup}` | |

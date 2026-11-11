@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import base64
+import hashlib
+import ipaddress
+import re
 from typing import Annotated, Any, cast
 
 from pydantic import Field
@@ -19,9 +23,11 @@ from .helpers import (
     _TARGET_DESC,
     _TEMPLATE_NAME_DESC,
     _get_client,
+    _is_task,
     _ok,
     _qp,
     _register_pending_verify,
+    _verify_readback,
     _verify_response,
 )
 
@@ -127,10 +133,10 @@ def patch_instance(
         body["profiles"] = profiles
     if description is not _UNSET:
         body["description"] = description
-    result = _get_client().patch(
-        f"/1.0/instances/{name}", json=body, params=_qp(project=project),
-    )
-    _verify_response(body, result)
+    qp = _qp(project=project)
+    result = _get_client().patch(f"/1.0/instances/{name}", json=body, params=qp)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/instances/{name}", params=qp))
     return _ok(result)
 
 
@@ -153,10 +159,12 @@ def update_instance_metadata(
     project: _ProjectAnn = _UNSET_STR,
 ) -> dict[str, Any]:
     """Update instance image metadata."""
-    result = _get_client().put(
-        f"/1.0/instances/{name}/metadata", json=metadata, params=_qp(project=project),
-    )
-    _verify_response(metadata, result)
+    qp = _qp(project=project)
+    result = _get_client().put(f"/1.0/instances/{name}/metadata", json=metadata, params=qp)
+    if not _is_task(result):
+        _verify_readback(
+            metadata, _get_client().get(f"/1.0/instances/{name}/metadata", params=qp),
+        )
     return _ok(result)
 
 
@@ -397,10 +405,10 @@ def update_image(
         body["public"] = public
     if auto_update is not _UNSET:
         body["auto_update"] = auto_update
-    result = _get_client().put(
-        f"/1.0/images/{fingerprint}", json=body, params=_qp(project=project),
-    )
-    _verify_response(body, result)
+    qp = _qp(project=project)
+    result = _get_client().put(f"/1.0/images/{fingerprint}", json=body, params=qp)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/images/{fingerprint}", params=qp))
     return _ok(result)
 
 
@@ -421,10 +429,10 @@ def patch_image(
         body["properties"] = properties
     if public is not _UNSET:
         body["public"] = public
-    result = _get_client().patch(
-        f"/1.0/images/{fingerprint}", json=body, params=_qp(project=project),
-    )
-    _verify_response(body, result)
+    qp = _qp(project=project)
+    result = _get_client().patch(f"/1.0/images/{fingerprint}", json=body, params=qp)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/images/{fingerprint}", params=qp))
     return _ok(result)
 
 
@@ -445,7 +453,8 @@ def create_image_alias(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/images/aliases", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/images/aliases/{name}"))
     return _ok(result)
 
 
@@ -460,7 +469,8 @@ def update_image_alias(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/images/aliases/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/images/aliases/{name}"))
     return _ok(result)
 
 
@@ -469,7 +479,8 @@ def rename_image_alias(name: str, new_name: str) -> dict[str, Any]:
     """Rename an image alias."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/images/aliases/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/images/aliases/{new_name}"))
     _register_pending_verify(
         result, body, f"/1.0/images/aliases/{new_name}", {},
     )
@@ -490,7 +501,7 @@ def create_network(
     description: _DescriptionAnn = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
 ) -> dict[str, Any]:
-    """Create a network. Async."""
+    """Create a network."""
     body: dict[str, Any] = {"name": name, "type": type}
     if config is not _UNSET:
         body["config"] = config
@@ -498,7 +509,8 @@ def create_network(
         body["description"] = description
     qp = _qp(project=project)
     result = _get_client().post("/1.0/networks", json=body, params=qp)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/networks/{name}", params=qp))
     _register_pending_verify(result, body, f"/1.0/networks/{name}", qp)
     return _ok(result)
 
@@ -516,10 +528,10 @@ def update_network(
         body["config"] = config
     if description is not _UNSET:
         body["description"] = description
-    result = _get_client().put(
-        f"/1.0/networks/{name}", json=body, params=_qp(project=project),
-    )
-    _verify_response(body, result)
+    qp = _qp(project=project)
+    result = _get_client().put(f"/1.0/networks/{name}", json=body, params=qp)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/networks/{name}", params=qp))
     return _ok(result)
 
 
@@ -536,19 +548,20 @@ def patch_network(
         body["config"] = config
     if description is not _UNSET:
         body["description"] = description
-    result = _get_client().patch(
-        f"/1.0/networks/{name}", json=body, params=_qp(project=project),
-    )
-    _verify_response(body, result)
+    qp = _qp(project=project)
+    result = _get_client().patch(f"/1.0/networks/{name}", json=body, params=qp)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/networks/{name}", params=qp))
     return _ok(result)
 
 
 @_op(incus_write)
 def rename_network(name: str, new_name: str) -> dict[str, Any]:
-    """Rename a network. Async."""
+    """Rename a network."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/networks/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/networks/{new_name}"))
     _register_pending_verify(result, body, f"/1.0/networks/{new_name}", {})
     return _ok(result)
 
@@ -570,7 +583,9 @@ def create_network_forward(
     if ports is not _UNSET:
         body["ports"] = ports
     result = _get_client().post(f"/1.0/networks/{network}/forwards", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        stored = _canonical_ip(listen_address)
+        _verify_readback(body, _get_client().get(f"/1.0/networks/{network}/forwards/{stored}"))
     return _ok(result)
 
 
@@ -593,7 +608,10 @@ def update_network_forward(
     result = _get_client().put(
         f"/1.0/networks/{network}/forwards/{listen_address}", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            body, _get_client().get(f"/1.0/networks/{network}/forwards/{listen_address}"),
+        )
     return _ok(result)
 
 
@@ -622,7 +640,11 @@ def create_load_balancer(
     result = _get_client().post(
         f"/1.0/networks/{network}/load-balancers", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            body,
+            _get_client().get(f"/1.0/networks/{network}/load-balancers/{listen_address}"),
+        )
     return _ok(result)
 
 
@@ -649,7 +671,11 @@ def update_load_balancer(
     result = _get_client().put(
         f"/1.0/networks/{network}/load-balancers/{listen_address}", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            body,
+            _get_client().get(f"/1.0/networks/{network}/load-balancers/{listen_address}"),
+        )
     return _ok(result)
 
 
@@ -673,7 +699,8 @@ def create_network_peer(
     if config is not _UNSET:
         body["config"] = config
     result = _get_client().post(f"/1.0/networks/{network}/peers", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/networks/{network}/peers/{name}"))
     return cast("OperationDict", _ok(result))
 
 
@@ -688,7 +715,8 @@ def update_network_peer(
     if config is not _UNSET:
         body["config"] = config
     result = _get_client().put(f"/1.0/networks/{network}/peers/{peer}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/networks/{network}/peers/{peer}"))
     return _ok(result)
 
 
@@ -719,7 +747,8 @@ def create_network_acl(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/network-acls", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-acls/{name}"))
     return _ok(result)
 
 
@@ -746,7 +775,8 @@ def update_network_acl(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/network-acls/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-acls/{name}"))
     return _ok(result)
 
 
@@ -755,7 +785,8 @@ def rename_network_acl(name: str, new_name: str) -> dict[str, Any]:
     """Rename a network ACL."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/network-acls/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-acls/{new_name}"))
     _register_pending_verify(result, body, f"/1.0/network-acls/{new_name}", {})
     return _ok(result)
 
@@ -779,7 +810,8 @@ def create_network_address_set(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/network-address-sets", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-address-sets/{name}"))
     return _ok(result)
 
 
@@ -799,7 +831,8 @@ def update_network_address_set(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/network-address-sets/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-address-sets/{name}"))
     return _ok(result)
 
 
@@ -810,7 +843,8 @@ def rename_network_address_set(name: str, new_name: str) -> dict[str, Any]:
     result = _get_client().post(
         f"/1.0/network-address-sets/{name}", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-address-sets/{new_name}"))
     _register_pending_verify(
         result, body, f"/1.0/network-address-sets/{new_name}", {},
     )
@@ -834,7 +868,8 @@ def create_network_integration(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/network-integrations", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-integrations/{name}"))
     return _ok(result)
 
 
@@ -851,7 +886,8 @@ def update_network_integration(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/network-integrations/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-integrations/{name}"))
     return _ok(result)
 
 
@@ -862,7 +898,8 @@ def rename_network_integration(name: str, new_name: str) -> dict[str, Any]:
     result = _get_client().post(
         f"/1.0/network-integrations/{name}", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-integrations/{new_name}"))
     _register_pending_verify(
         result, body, f"/1.0/network-integrations/{new_name}", {},
     )
@@ -885,7 +922,8 @@ def create_network_zone(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/network-zones", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-zones/{name}"))
     return _ok(result)
 
 
@@ -902,7 +940,8 @@ def update_network_zone(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/network-zones/{zone}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-zones/{zone}"))
     return _ok(result)
 
 
@@ -928,7 +967,8 @@ def create_zone_record(
     result = _get_client().post(
         f"/1.0/network-zones/{zone}/records", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-zones/{zone}/records/{name}"))
     return _ok(result)
 
 
@@ -953,7 +993,8 @@ def update_zone_record(
     result = _get_client().put(
         f"/1.0/network-zones/{zone}/records/{name}", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/network-zones/{zone}/records/{name}"))
     return _ok(result)
 
 
@@ -976,8 +1017,19 @@ def create_storage_pool(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/storage-pools", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            _without_source_wipe(body), _get_client().get(f"/1.0/storage-pools/{name}"),
+        )
     return _ok(result)
+
+
+def _without_source_wipe(body: dict[str, Any]) -> dict[str, Any]:
+    """`body` minus `config.source.wipe`: a one-shot action Incus clears once the disk is wiped."""
+    config = body.get("config")
+    if not isinstance(config, dict):
+        return body
+    return {**body, "config": {k: v for k, v in config.items() if k != "source.wipe"}}
 
 
 @_op(incus_write)
@@ -993,7 +1045,8 @@ def update_storage_pool(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/storage-pools/{pool}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/storage-pools/{pool}"))
     return _ok(result)
 
 
@@ -1015,7 +1068,7 @@ def create_volume(
     ] = _UNSET_STR,
     project: _ProjectAnn = _UNSET_STR,
 ) -> OperationDict:
-    """Create a storage volume. Async."""
+    """Create a storage volume."""
     body: dict[str, Any] = {"name": name, "type": type}
     if config is not _UNSET:
         body["config"] = config
@@ -1025,7 +1078,11 @@ def create_volume(
     result = _get_client().post(
         f"/1.0/storage-pools/{pool}/volumes", json=body, params=qp,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            body,
+            _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{name}", params=qp),
+        )
     _register_pending_verify(
         result, body, f"/1.0/storage-pools/{pool}/volumes/{type}/{name}", qp,
     )
@@ -1047,23 +1104,30 @@ def update_volume(
         body["config"] = config
     if description is not _UNSET:
         body["description"] = description
+    qp = _qp(project=project)
     result = _get_client().put(
-        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}",
-        json=body,
-        params=_qp(project=project),
+        f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", json=body, params=qp,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            body,
+            _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", params=qp),
+        )
     return _ok(result)
 
 
 @_op(incus_write)
 def rename_volume(pool: str, type: str, volume: str, new_name: str) -> OperationDict:
-    """Rename/move a storage volume. Async."""
+    """Rename a storage volume."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            body,
+            _get_client().get(f"/1.0/storage-pools/{pool}/volumes/{type}/{new_name}"),
+        )
     _register_pending_verify(
         result,
         body,
@@ -1112,7 +1176,13 @@ def update_volume_snapshot(
         f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}",
         json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            body,
+            _get_client().get(
+                f"/1.0/storage-pools/{pool}/volumes/{type}/{volume}/snapshots/{snapshot}",
+            ),
+        )
     return _ok(result)
 
 
@@ -1204,14 +1274,16 @@ def create_bucket(
     config: _ConfigAnn = _UNSET_DICT,
     description: _DescriptionAnn = _UNSET_STR,
 ) -> dict[str, Any]:
-    """Create a storage bucket."""
+    """Create a storage bucket. Returns the bucket's admin access key."""
     body: dict[str, Any] = {"name": name}
     if config is not _UNSET:
         body["config"] = config
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post(f"/1.0/storage-pools/{pool}/buckets", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/storage-pools/{pool}/buckets/{name}"))
+    _register_pending_verify(result, body, f"/1.0/storage-pools/{pool}/buckets/{name}", {})
     return _ok(result)
 
 
@@ -1231,7 +1303,8 @@ def update_bucket(
     result = _get_client().put(
         f"/1.0/storage-pools/{pool}/buckets/{bucket}", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/storage-pools/{pool}/buckets/{bucket}"))
     return _ok(result)
 
 
@@ -1275,7 +1348,10 @@ def update_bucket_key(
     result = _get_client().put(
         f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys/{key}", json=body,
     )
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(
+            body, _get_client().get(f"/1.0/storage-pools/{pool}/buckets/{bucket}/keys/{key}"),
+        )
     return _ok(result)
 
 
@@ -1341,10 +1417,10 @@ def create_profile(
         body["devices"] = devices
     if description is not _UNSET:
         body["description"] = description
-    result = _get_client().post(
-        "/1.0/profiles", json=body, params=_qp(project=project),
-    )
-    _verify_response(body, result)
+    qp = _qp(project=project)
+    result = _get_client().post("/1.0/profiles", json=body, params=qp)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/profiles/{name}", params=qp))
     return _ok(result)
 
 
@@ -1364,10 +1440,10 @@ def update_profile(
         body["devices"] = devices
     if description is not _UNSET:
         body["description"] = description
-    result = _get_client().put(
-        f"/1.0/profiles/{name}", json=body, params=_qp(project=project),
-    )
-    _verify_response(body, result)
+    qp = _qp(project=project)
+    result = _get_client().put(f"/1.0/profiles/{name}", json=body, params=qp)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/profiles/{name}", params=qp))
     return _ok(result)
 
 
@@ -1376,7 +1452,8 @@ def rename_profile(name: str, new_name: str) -> dict[str, Any]:
     """Rename a profile."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/profiles/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/profiles/{new_name}"))
     _register_pending_verify(result, body, f"/1.0/profiles/{new_name}", {})
     return _ok(result)
 
@@ -1397,7 +1474,8 @@ def create_project(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/projects", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/projects/{name}"))
     return _ok(result)
 
 
@@ -1414,7 +1492,8 @@ def update_project(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/projects/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/projects/{name}"))
     return _ok(result)
 
 
@@ -1433,27 +1512,42 @@ def rename_project(name: str, new_name: str) -> OperationDict:
 
 @_op(incus_write)
 def update_cluster(
+    enabled: Annotated[
+        bool,
+        Field(
+            description=(
+                "True enables clustering (joins an existing cluster when cluster_address is "
+                "set); False disables it."
+            ),
+        ),
+    ],
     server_name: Annotated[
         str | None, Field(description="Cluster server name."),
     ] = _UNSET_STR,
-    enabled: Annotated[
-        bool | None, Field(description="Whether clustering is enabled."),
-    ] = _UNSET_BOOL,
     cluster_address: Annotated[
         str | None, Field(description="Cluster network address (host:port)."),
     ] = _UNSET_STR,
 ) -> dict[str, Any]:
-    """Update cluster configuration."""
-    body: dict[str, Any] = {}
+    """Enable or disable clustering on this server.
+
+    Disabling resets the server's database: storage pools, networks, images
+    and trusted certificates are gone and Incus restarts. It is refused on a
+    server that is not clustered.
+
+    Verify skipped: disabling answers with an empty object and restarts
+    Incus, so there is nothing to read back; enabling and joining are async.
+    """
+    if not enabled and not _get_client().get("/1.0/cluster")["enabled"]:
+        raise ValueError(
+            "This server is not clustered; Incus would answer a disable by resetting its "
+            "database (storage pools, networks, images, trusted certificates). Nothing was sent."
+        )
+    body: dict[str, Any] = {"enabled": enabled}
     if server_name is not _UNSET:
         body["server_name"] = server_name
-    if enabled is not _UNSET:
-        body["enabled"] = enabled
     if cluster_address is not _UNSET:
         body["cluster_address"] = cluster_address
-    result = _get_client().put("/1.0/cluster", json=body)
-    _verify_response(body, result)
-    return _ok(result)
+    return _ok(_get_client().put("/1.0/cluster", json=body))
 
 
 @_op(incus_write)
@@ -1476,10 +1570,14 @@ def update_cluster_certificate(
 
 @_op(incus_write)
 def request_join_token(name: str) -> OperationDict:
-    """Request a cluster join token for a new member."""
+    """Request a cluster join token for a new member.
+
+    Incus answers with a token operation whose metadata holds the member name
+    and the join secret.
+    """
     body: dict[str, Any] = {"server_name": name}
     result = _get_client().post("/1.0/cluster/members", json=body)
-    _verify_response(body, result)
+    _verify_response({"serverName": name}, result["metadata"])
     return cast("OperationDict", _ok(result))
 
 
@@ -1502,7 +1600,8 @@ def update_cluster_member(
     if groups is not _UNSET:
         body["groups"] = groups
     result = _get_client().put(f"/1.0/cluster/members/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/cluster/members/{name}"))
     return _ok(result)
 
 
@@ -1511,7 +1610,8 @@ def rename_cluster_member(name: str, new_name: str) -> dict[str, Any]:
     """Rename a cluster member."""
     body: dict[str, Any] = {"server_name": new_name}
     result = _get_client().post(f"/1.0/cluster/members/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/cluster/members/{new_name}"))
     _register_pending_verify(result, body, f"/1.0/cluster/members/{new_name}", {})
     return _ok(result)
 
@@ -1532,7 +1632,8 @@ def create_cluster_group(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().post("/1.0/cluster/groups", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/cluster/groups/{name}"))
     return _ok(result)
 
 
@@ -1552,7 +1653,8 @@ def update_cluster_group(
     if description is not _UNSET:
         body["description"] = description
     result = _get_client().put(f"/1.0/cluster/groups/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/cluster/groups/{name}"))
     return _ok(result)
 
 
@@ -1561,7 +1663,8 @@ def rename_cluster_group(name: str, new_name: str) -> dict[str, Any]:
     """Rename a cluster group."""
     body: dict[str, Any] = {"name": new_name}
     result = _get_client().post(f"/1.0/cluster/groups/{name}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/cluster/groups/{new_name}"))
     _register_pending_verify(result, body, f"/1.0/cluster/groups/{new_name}", {})
     return _ok(result)
 
@@ -1598,7 +1701,9 @@ def add_certificate(
     if projects is not _UNSET:
         body["projects"] = projects
     result = _get_client().post("/1.0/certificates", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        fingerprint = _cert_fingerprint(certificate)
+        _verify_readback(body, _get_client().get(f"/1.0/certificates/{fingerprint}"))
     return _ok(result)
 
 
@@ -1619,8 +1724,14 @@ def update_certificate(
         Field(description="Restricted project names."),
     ] = _UNSET_LIST_STR,
 ) -> dict[str, Any]:
-    """Update a trusted certificate."""
-    body: dict[str, Any] = {}
+    """Update a trusted certificate (full replace).
+
+    Incus refuses any change of the certificate type, so the stored type is
+    sent back unchanged. A new `certificate` moves the entry to that
+    certificate's fingerprint.
+    """
+    stored = _get_client().get(f"/1.0/certificates/{fingerprint}")
+    body: dict[str, Any] = {"type": stored["type"]}
     if certificate is not _UNSET:
         body["certificate"] = certificate
     if name is not _UNSET:
@@ -1630,5 +1741,87 @@ def update_certificate(
     if projects is not _UNSET:
         body["projects"] = projects
     result = _get_client().put(f"/1.0/certificates/{fingerprint}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        current = fingerprint
+        if certificate is not _UNSET and certificate:
+            current = _cert_fingerprint(certificate)
+        _verify_readback(body, _get_client().get(f"/1.0/certificates/{current}"))
     return _ok(result)
+
+
+def _canonical_ip(address: str) -> str:
+    """A forward's listen address as Incus stores it: Go's net.IP form.
+
+    Incus only creates a forward on an address that parses as an IP, so a
+    successful create always has one.
+    """
+    ip = ipaddress.ip_address(address)
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        return str(ip.ipv4_mapped)
+    return str(ip)
+
+
+_PEM_BEGIN = "-----BEGIN "
+_PEM_END = "\n-----END "
+_PEM_DASHES = "-----"
+# Go's base64.StdEncoding: padded, no other characters.
+_BASE64 = re.compile(r"(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?")
+
+
+def _pem_line(data: str) -> tuple[str, str]:
+    """Go encoding/pem getLine: the first line without EOL and trailing blanks, and the rest."""
+    eol = data.find("\n")
+    if eol < 0:
+        return data.rstrip(" \t"), ""
+    end = eol - 1 if eol > 0 and data[eol - 1] == "\r" else eol
+    return data[:end].rstrip(" \t"), data[eol + 1:]
+
+
+def _first_pem_block(pem: str) -> bytes:
+    """Bytes of the first PEM block, decoded exactly as Go's encoding/pem.Decode does.
+
+    Incus reads certificates with pem.Decode: any block type, `Key: value`
+    headers skipped, and a malformed block passed over for the next one.
+    """
+    rest = pem
+    while True:
+        if rest.startswith(_PEM_BEGIN):
+            rest = rest[len(_PEM_BEGIN):]
+        else:
+            start = rest.find("\n" + _PEM_BEGIN)
+            if start < 0:
+                raise ValueError("certificate holds no PEM block")
+            rest = rest[start + 1 + len(_PEM_BEGIN):]
+        type_line, rest = _pem_line(rest)
+        if not type_line.endswith(_PEM_DASHES):
+            continue
+        block_type = type_line[:-len(_PEM_DASHES)]
+        has_headers = False
+        while True:
+            if not rest:
+                raise ValueError("certificate holds no PEM block")
+            line, after = _pem_line(rest)
+            if ":" not in line:
+                break
+            has_headers = True
+            rest = after
+        if not has_headers and rest.startswith(_PEM_END[1:]):
+            end, trailer_at = 0, len(_PEM_END) - 1
+        else:
+            end = rest.find(_PEM_END)
+            if end < 0:
+                continue
+            trailer_at = end + len(_PEM_END)
+        trailer_end = trailer_at + len(block_type) + len(_PEM_DASHES)
+        if rest[trailer_at:trailer_end] != block_type + _PEM_DASHES:
+            continue
+        if _pem_line(rest[trailer_end:])[0]:
+            continue
+        body = "".join(ch for ch in rest[:end] if ch not in " \t\r\n")
+        if _BASE64.fullmatch(body):
+            return base64.b64decode(body)
+
+
+def _cert_fingerprint(pem: str) -> str:
+    """Incus's fingerprint of a PEM certificate: sha256 of its first block's DER."""
+    return hashlib.sha256(_first_pem_block(pem)).hexdigest()

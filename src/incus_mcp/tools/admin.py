@@ -6,7 +6,7 @@ from pydantic import Field
 
 from ..registry import _UNSET, _op
 from .groups import incus_admin
-from .helpers import _get_client, _ok, _verify_response
+from .helpers import _get_client, _is_task, _ok, _verify_readback
 
 _WARNING_STATUS_DESC = "Warning lifecycle status."
 _UNSET_STATUS = cast("Literal['new', 'acknowledged'] | None", _UNSET)
@@ -25,7 +25,8 @@ def update_server_config(
     """Update server configuration (full replace)."""
     body: dict[str, Any] = {"config": config}
     result = _get_client().put("/1.0", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get("/1.0"))
     return _ok(result)
 
 
@@ -38,7 +39,8 @@ def patch_server_config(
     """Partially update server configuration (merge)."""
     body: dict[str, Any] = {"config": config}
     result = _get_client().patch("/1.0", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get("/1.0"))
     return _ok(result)
 
 
@@ -53,7 +55,8 @@ def update_warning(
     """Acknowledge or reset a warning (full replace)."""
     body: dict[str, Any] = {"status": status}
     result = _get_client().put(f"/1.0/warnings/{uuid}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/warnings/{uuid}"))
     return _ok(result)
 
 
@@ -70,5 +73,6 @@ def patch_warning(
     if status is not _UNSET:
         body["status"] = status
     result = _get_client().patch(f"/1.0/warnings/{uuid}", json=body)
-    _verify_response(body, result)
+    if not _is_task(result):
+        _verify_readback(body, _get_client().get(f"/1.0/warnings/{uuid}"))
     return _ok(result)

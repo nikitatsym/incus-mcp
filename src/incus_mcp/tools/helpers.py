@@ -159,9 +159,10 @@ _SKIP_VERIFY_ROOT: frozenset[str] = frozenset({
 
 
 def _verify_response(sent: dict[str, Any], received: Any, path: str = "") -> None:
-    """Raise if the API silently dropped a key we sent (recursive).
+    """Raise if a key we sent is missing from `received` (recursive).
 
-    Incus returns unknown-key namespaces as an empty dict without a 4xx.
+    Incus ignores JSON names it does not know, so a missing key means the
+    write did not take it.
     """
     if not isinstance(received, dict):
         return
@@ -181,11 +182,35 @@ def _verify_response(sent: dict[str, Any], received: Any, path: str = "") -> Non
             _verify_response(value, received[key], full)
 
 
+def _is_task(result: Any) -> bool:
+    """True for an async operation: the write lands when the operation ends."""
+    return isinstance(result, dict) and result.get("class") == "task"
+
+
+def _without_cleared(sent: dict[str, Any]) -> dict[str, Any]:
+    """`sent` minus the values that clear a key: "" and null (recursive)."""
+    return {
+        key: _without_cleared(value) if isinstance(value, dict) else value
+        for key, value in sent.items()
+        if value is not None and value != ""
+    }
+
+
+def _verify_readback(sent: dict[str, Any], current: Any) -> None:
+    """Verify a write against the resource as read back after it landed.
+
+    Incus answers most sync writes with an empty body rather than the
+    resource, so the check needs a fresh GET. A key sent as "" or null is cleared, so its
+    absence from the read-back is expected and it is not checked.
+    """
+    _verify_response(_without_cleared(sent), current)
+
+
 # ── Pending-verify registry for async writes ────────────────────────────
 #
 # Async write ops (POST returning class="task") register (sent, target_path,
-# target_query_params, ts) here keyed by op id. The waiter (Step 8) drains
-# on terminal success by fetching the target and running _verify_response.
+# target_query_params, ts) here keyed by op id. The waiters drain the entry
+# on terminal success, fetch the target and run _verify_readback on it.
 # Entries survive across MCP tool calls (write happens now, wait later) but
 # NOT process restart. TTL prevents unbounded growth if wait is never called.
 

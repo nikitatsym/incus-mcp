@@ -6,6 +6,8 @@ wiring on `update_server_config` catches silent-drop on `config`.
 
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from incus_mcp import server
@@ -61,46 +63,52 @@ def test_schema_update_server_config_required():
     assert schema["additionalProperties"] is False
 
 
-# ── Verify wiring on update_server_config ─────────────────────────────
+# -- Read-back verify wiring -------------------------------------------
+# The writes answer with an empty object, as real Incus does, and the op
+# reads the resource back with a GET.
 
 
 def test_update_server_config_silent_drop_raises(stub_client, respx_mock):
-    respx_mock.put("/1.0").respond(
-        200, json=_sync({"config": {}, "environment": {}}),
-    )
+    respx_mock.put("/1.0").respond(200, json=_sync({}))
+    respx_mock.get("/1.0").respond(200, json=_sync({"config": {}, "environment": {}}))
     with pytest.raises(ValueError, match=r"config\.core\.bogus"):
         admin.update_server_config(config={"core.bogus": "x"})
 
 
 def test_update_server_config_verify_pass(stub_client, respx_mock):
-    respx_mock.put("/1.0").respond(
-        200,
-        json=_sync({"config": {"core.https_address": ":8443"}}),
+    respx_mock.put("/1.0").respond(200, json=_sync({}))
+    respx_mock.get("/1.0").respond(
+        200, json=_sync({"config": {"core.https_address": ":8443"}}),
     )
     admin.update_server_config(config={"core.https_address": ":8443"})
 
 
 def test_patch_server_config_verify_wired(stub_client, respx_mock):
-    respx_mock.patch("/1.0").respond(
-        200,
-        json=_sync({"config": {}}),
-    )
+    respx_mock.patch("/1.0").respond(200, json=_sync({}))
+    respx_mock.get("/1.0").respond(200, json=_sync({"config": {}}))
     with pytest.raises(ValueError, match=r"config\.core\.trust_password"):
         admin.patch_server_config(config={"core.trust_password": "s3cret"})
 
 
+def test_patch_server_config_cleared_key_not_checked(stub_client, respx_mock):
+    # "" unsets the key, so the read-back legitimately lacks it.
+    respx_mock.patch("/1.0").respond(200, json=_sync({}))
+    respx_mock.get("/1.0").respond(200, json=_sync({"config": {}}))
+    admin.patch_server_config(config={"core.https_address": ""})
+
+
 def test_update_warning_verify_pass(stub_client, respx_mock):
-    respx_mock.put("/1.0/warnings/uuid-1").respond(
-        200,
-        json=_sync({"status": "acknowledged", "uuid": "uuid-1"}),
+    respx_mock.put("/1.0/warnings/uuid-1").respond(200, json=_sync({}))
+    respx_mock.get("/1.0/warnings/uuid-1").respond(
+        200, json=_sync({"status": "acknowledged", "uuid": "uuid-1"}),
     )
     admin.update_warning(uuid="uuid-1", status="acknowledged")
 
 
 def test_patch_warning_omit_status(stub_client, respx_mock):
-    import json
-    route = respx_mock.patch("/1.0/warnings/uuid-1").respond(
-        200, json=_sync({}),
+    route = respx_mock.patch("/1.0/warnings/uuid-1").respond(200, json=_sync({}))
+    respx_mock.get("/1.0/warnings/uuid-1").respond(
+        200, json=_sync({"status": "new", "uuid": "uuid-1"}),
     )
     admin.patch_warning(uuid="uuid-1")
     body = json.loads(route.calls[0].request.content)
@@ -108,10 +116,9 @@ def test_patch_warning_omit_status(stub_client, respx_mock):
 
 
 def test_patch_warning_explicit_status(stub_client, respx_mock):
-    import json
-    route = respx_mock.patch("/1.0/warnings/uuid-1").respond(
-        200,
-        json=_sync({"status": "new"}),
+    route = respx_mock.patch("/1.0/warnings/uuid-1").respond(200, json=_sync({}))
+    respx_mock.get("/1.0/warnings/uuid-1").respond(
+        200, json=_sync({"status": "new", "uuid": "uuid-1"}),
     )
     admin.patch_warning(uuid="uuid-1", status="new")
     body = json.loads(route.calls[0].request.content)

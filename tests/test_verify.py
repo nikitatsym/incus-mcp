@@ -1,10 +1,10 @@
-"""Contract tests for `_verify_response`."""
+"""Contract tests for `_verify_response` and `_verify_readback`."""
 
 from __future__ import annotations
 
 import pytest
 
-from incus_mcp.tools.helpers import _verify_response
+from incus_mcp.tools.helpers import _verify_readback, _verify_response
 
 
 def test_empty_sent_is_noop():
@@ -102,3 +102,24 @@ def test_async_task_response_short_circuits():
             "metadata": {"class": "task", "resources": {"instances": ["/1.0/instances/x"]}},
         },
     )
+
+
+def test_readback_skips_cleared_values_at_any_depth():
+    _verify_readback(
+        {"description": "", "config": {"limits.cpu": None, "user.a": "1"}},
+        {"config": {"user.a": "1"}},
+    )
+
+
+def test_readback_still_checks_set_values():
+    with pytest.raises(ValueError, match=r"'config\.user\.b'"):
+        _verify_readback(
+            {"config": {"user.a": "", "user.b": "2"}},
+            {"config": {}},
+        )
+
+
+@pytest.mark.parametrize("value", [False, 0, [], {}])
+def test_readback_keeps_falsy_values_that_do_not_clear(value):
+    with pytest.raises(ValueError, match=r"'flag'"):
+        _verify_readback({"flag": value}, {})
